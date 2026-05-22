@@ -1,17 +1,11 @@
 # Research on Multi-objective Optimization of Low-Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm
 
-<div align="center">
+**Python** • **License** • **Paper** • **Data**
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Paper](https://img.shields.io/badge/Paper-Journal%20of%20Cleaner%20Production-red.svg)
-![Data](https://img.shields.io/badge/Data-NCTTCA%20Observatory-orange.svg)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 
-**An Enhanced NSGA-II Framework for Low-Carbon Container Routing**
-
-[Overview](#overview) • [Key Findings](#key-findings) • [Repository Structure](#repository-structure) • [Quick Start](#quick-start) • [Data Sources](#data-sources) • [Results](#results) • [Citation](#citation)
-
-</div>
+An Enhanced NSGA-II Framework for Low-Carbon Container Routing on the Mombasa-Bujumbura Corridor.
 
 ---
 
@@ -19,14 +13,17 @@
 
 This repository contains the complete code, data, and analysis for the paper:
 
-> **"Research on Multi-objective Optimization of Low Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm"**  
-> *Yves Ndikuriyo, Yinggui Zhang, Dung Davou Fom*  
-> *School of Traffic and Transportation Engineering, Central South University, Changsha, China*  
+> **"Research on Multi-objective Optimization of Low Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm"**
+>
+> *Yves Ndikuriyo, Yinggui Zhang, Dung Davou Fom*
+>
+> *School of Traffic and Transportation Engineering, Central South University, Changsha, China*
+>
 > *Journal of Cleaner Production (Under Review)*
 
 ### What is LC-CTRP?
 
-The Low-Carbon Container Transportation Routing Problem (LC-CTRP) optimizes multimodal freight routes, balancing three conflicting objectives:
+The **Low-Carbon Container Transportation Routing Problem (LC-CTRP)** optimizes multimodal freight routes, balancing three conflicting objectives:
 
 | Objective | Description | Unit |
 |-----------|-------------|------|
@@ -39,27 +36,22 @@ The Low-Carbon Container Transportation Routing Problem (LC-CTRP) optimizes mult
 The **Enhanced NSGA-II (En-NSGA-II)** is a hybrid multi-objective optimization framework that integrates:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      En-NSGA-II Framework                        │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │     PPO      │───▶│     GNN      │───▶│   NSGA-II    │       │
-│  │  Adaptive    │    │   Surrogate  │    │   Pareto     │       │
-│  │ Initialization│    │  Evaluation  │    │    Search    │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-│         │                   │                   │               │
-│         ▼                   ▼                   ▼               │
-│   Policy Learning     Fast Approximation    Multi-objective     │
-│   for Promising       of Emissions &       Evolutionary         │
-│   Search Regions      Cost Functions       Optimization        │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           En-NSGA-II Framework                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
+│   │     PPO      │───▶│     GNN      │───▶│   NSGA-II    │                  │
+│   │  Adaptive    │    │   Surrogate  │    │   Pareto     │                  │
+│   │ Initialization│    │  Evaluation  │    │    Search    │                  │
+│   └──────────────┘    └──────────────┘    └──────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **PPO (Proximal Policy Optimization):** Learns adaptive initialization policies to focus search on promising regions of the trade-off space, achieving 86.2% cost reduction vs random initialization.
-
-- **GNN (Graph Neural Network):** Provides fast surrogate evaluation of route emissions (R² = 0.935) and cost (R² = 0.954), achieving 5-6× speedup.
-
-- **NSGA-II:** Performs robust Pareto frontier search with enhanced environmental weighting for decarbonization priorities.
+| Component | Description | Key Metric |
+|-----------|-------------|------------|
+| **PPO** | Learns adaptive initialization policies | 86.2% cost reduction vs random |
+| **GNN** | Fast surrogate evaluation of emissions/cost | R² = 0.935/0.954, 5-6× speedup |
+| **NSGA-II** | Pareto frontier search with enhancements | 68% lower emissions vs standard |
 
 ---
 
@@ -67,105 +59,204 @@ The **Enhanced NSGA-II (En-NSGA-II)** is a hybrid multi-objective optimization f
 
 | Finding | Value | Implication |
 |---------|-------|-------------|
-| **Total road CO₂ emissions** | 3.66 million tonnes | Baseline established for corridor |
-| **En-NSGA-II baseline emissions** | 474.9 kg CO₂ | 68% lower than NSGA-II |
-| **En-NSGA-II baseline cost** | $346.15 | Only 10% premium over NSGA-II |
-| **Optimal carbon price** | **$55/ton CO₂** | Policy target for corridor |
-| **Minimum emissions achieved** | **336.0 kg CO₂** | 29% reduction from baseline |
-| **Total decarbonization potential** | **1.79 million tonnes** | 48.8% of baseline |
-| **Most cost-effective measure** | Driver training | $10/tonne |
+| Total road CO₂ emissions | 3.66 million tonnes | Baseline for corridor |
+| En-NSGA-II baseline emissions | 474.9 kg CO₂ | 68% lower than NSGA-II |
+| En-NSGA-II baseline cost | $346.15 | Only 10% premium |
+| Optimal carbon price | $55/ton CO₂ | Policy target |
+| Minimum emissions achieved | 336.0 kg CO₂ | 29% reduction |
+| Total decarbonization potential | 1.79 million tonnes | 48.8% of baseline |
+| Most cost-effective measure | Driver training | $10/tonne |
 
-### Algorithm Performance Summary
+---
 
-| Algorithm | Cost (USD) | Emissions (kg) | Time (s) | vs NSGA-II |
-|-----------|------------|----------------|----------|------------|
-| **En-NSGA-II** | **346.15** | **474.9** | 0.71 | **68% lower emissions** |
-| NSGA-II | 314.34 | 1,500.9 | 0.73 | Baseline |
-| SPEA2 | 552.62 | 563.2 | 0.66 | 15.7% lower emissions |
-| MOEA/D | 394.04 | 921.3 | 0.11 | 38.6% lower emissions |
-| Branch & Cut | 398.17 | 1,763.2 | 0.05 | 17.5% higher emissions |
+## Algorithm Performance Summary (11 Benchmark Problems)
 
-### Carbon Price Sensitivity (En-NSGA-II)
+| Algorithm | HV Wins | IGD Wins | Spread Wins | Runtime Wins | Win Rate |
+|-----------|---------|----------|-------------|--------------|----------|
+| **En-NSGA-II** | 10 (90.9%) | 8 (72.7%) | 7 (63.6%) | 0 | **56.8%** |
+| NSGA-II | 1 (9.1%) | 3 (27.3%) | 3 (27.3%) | 0 | 15.9% |
+| SPEA2 | 0 | 0 | 1 (9.1%) | 0 | 2.3% |
+| MOEA/D | 0 | 0 | 0 | 11 (100%) | 25.0% |
 
-| Price ($/ton) | Emissions (kg) | Cost (USD) | Reduction |
-|--------------|----------------|------------|------------|
-| $0 | 474.9 | 346.15 | Baseline |
-| $55 | **336.0** | 492.53 | **29%** |
-| $150 | 498.6 | 792.71 | -5% |
+### HV Performance (Higher is better)
+
+| Problem | En-NSGA-II | NSGA-II | SPEA2 | MOEA/D |
+|---------|------------|---------|-------|--------|
+| ZDT1 | **99.33** | 79.98 | 65.58 | 63.52 |
+| ZDT2 | **99.66** | 82.57 | 79.49 | 94.52 |
+| ZDT3 | **100.69** | 81.36 | 75.62 | 65.21 |
+| ZDT4 | 9,706.11 | **9,769.00** | 9,640.21 | 8,745.60 |
+| ZDT6 | **100.51** | 36.55 | 36.41 | 35.21 |
+| DTLZ2 | **2.68** | 2.43 | 1.04 | 2.54 |
+| WFG1 | **27.00** | 25.52 | 17.98 | 25.15 |
+| WFG2 | **27.00** | 26.96 | 25.19 | 26.94 |
+
+### IGD Performance (Lower is better)
+
+| Problem | En-NSGA-II | NSGA-II | SPEA2 | MOEA/D |
+|---------|------------|---------|-------|--------|
+| ZDT1 | **0.011** | 0.934 | 2.566 | 1.551 |
+| ZDT2 | **0.011** | 1.415 | 2.361 | 1.486 |
+| ZDT3 | **0.218** | 0.409 | 1.573 | 0.618 |
+| ZDT6 | **0.008** | 5.107 | 6.341 | 5.396 |
+| DTLZ2 | **0.096** | 0.190 | 0.467 | 0.182 |
 
 ---
 
 ## Repository Structure
 
 ```
-NewRepo/
+En-NSGA-II-4-LC-CTRP/
 │
-├── README.md                       # This file
-├── LICENSE                         # MIT License
-├── requirements.txt                # Python dependencies
+├── README.md                                    # This file
+├── LICENSE                                      # MIT License
+├── requirements.txt                             # Python dependencies
 │
 ├── data/
-│   ├── raw/                        # Original datasets
-│   │   ├── CO2 Emission - Road.csv
-│   │   ├── Pollutants - Road.csv
-│   │   ├── rail-related GHG emissions for Kenya-*.xlsx
-│   │   ├── Transit time in Kenya.xls
-│   │   ├── Transit time in Uganda.xls
-│   │   ├── Transit time in Rwanda.xls
-│   │   ├── Weighbridge Traffic.xls
-│   │   ├── The Vessels Waiting Time before Berth.xls
-│   │   ├── Ship Turnaround Time.xls
-│   │   └── Volume per country of destination (TC).xls
-│   │
-│   └── processed/                  # Cleaned and aggregated data
-│       ├── corridor_emissions.csv
+│   ├── raw/                                     # Original datasets
+│   └── processed/                               # Cleaned data
 │       ├── algorithm_results.csv
-│       └── carbon_price_sensitivity.csv
+│       ├── carbon_price_sensitivity.csv
+│       ├── corridor_emissions.csv
+│       ├── border_crossing_summary.csv
+│       └── lake_ports_cargo.csv
 │
-├── notebooks/                      # Jupyter notebooks
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_emissions_analysis.ipynb
-│   ├── 03_algorithm_comparison.ipynb
-│   ├── 04_carbon_price_analysis.ipynb
-│   └── 05_visualization_dashboard.ipynb
-│
-├── src/                            # Source code
-│   ├── __init__.py
-│   ├── data_loader.py              # Load all datasets
-│   ├── emissions_analyzer.py       # Emissions computation
-│   ├── algorithm_comparator.py     # Algorithm comparison
-│   ├── carbon_price_sensitivity.py # Carbon price analysis
-│   ├── var_cvar_analyzer.py        # VaR/CVaR for borders
-│   └── visualization.py            # Plot generation
+├── scripts/                                     # Execution scripts
+│   ├── Statistical Analysis.py
+│   ├── GNN and PPO validation.py
+│   ├── En-NSGA-II vs Exact Method.py
+│   ├── COMPREHENSIVE BENCHMARK ANALYSIS 22 Instances.py
+│   └── Case study LC-CTRP ANALYSIS.py
 │
 ├── results/
-│   ├── figures/                    # All generated figures
-│   │   ├── figure_top_routes_co2.png
-│   │   ├── figure_emissions_by_vehicle_class.png
-│   │   ├── figure_mac_curve.png
-│   │   ├── figure_border_crossing_times.png
-│   │   ├── figure_rail_emissions_trend.png
-│   │   ├── figure_national_validation.png
-│   │   ├── figure_lake_ports_cargo.png
-│   │   ├── figure_algorithm_comparison_bars.png
-│   │   ├── figure_carbon_price_sensitivity.png
-│   │   ├── figure_carbon_price_emissions_comparison.png
-│   │   ├── figure_carbon_price_cost_comparison.png
-│   │   └── figure_carbon_price_tradeoff_comparison.png
+│   ├── figures/                                 # Generated figures
+│   │   ├── hv_comparison_boxplot.png
+│   │   ├── igd_comparison_boxplot.png
+│   │   ├── hv_statistical_significance.png
+│   │   ├── igd_statistical_significance.png
+│   │   ├── per_objective_accuracy.png
+│   │   ├── accuracy_tradeoff_surface.png
+│   │   ├── error_distribution_analysis.png
+│   │   ├── computational_breakdown.png
+│   │   ├── systematic_bias_analysis.png
+│   │   ├── pareto_comparison_3d.png
+│   │   ├── convergence_*.png
+│   │   ├── instance_comparison_summary.png
+│   │   └── analysis_plots/pareto_fronts/
+│   │       ├── ZDT1_pareto_front.png
+│   │       ├── ZDT2_pareto_front.png
+│   │       ├── ZDT3_pareto_front.png
+│   │       ├── ZDT4_pareto_front.png
+│   │       ├── ZDT6_pareto_front.png
+│   │       ├── DTLZ1_pareto_front.png
+│   │       ├── DTLZ2_pareto_front.png
+│   │       ├── DTLZ3_pareto_front.png
+│   │       ├── DTLZ4_pareto_front.png
+│   │       ├── WFG1_pareto_front.png
+│   │       ├── WFG2_pareto_front.png
+│   │       └── ZDT_suite_comparison.png
 │   │
-│   └── tables/                     # Summary tables
-│       ├── algorithm_performance_summary.csv
-│       ├── carbon_price_sensitivity_summary.csv
-│       └── route_emissions_summary.csv
+│   └── tables/                                  # Summary tables
+│       ├── complete_benchmark_results.csv
+│       ├── complete_summary_results.csv
+│       ├── statistical_significance.csv
+│       ├── per_objective_metrics.csv
+│       ├── accuracy_tradeoff_analysis.csv
+│       ├── computational_components.csv
+│       ├── error_distribution_analysis.csv
+│       ├── detailed_validation_results.csv
+│       ├── validation_summary_table.csv
+│       └── lc_ctrp_complete_results.json
 │
-├── docs/                           # Documentation
-│   ├── supplementary_material.pdf
-│   └── data_documentation.md
-│
-└── scripts/                        # Execution scripts
-    ├── run_full_analysis.py        # Run all analyses
-    └── generate_all_figures.py     # Generate all figures
+└── docs/                                        # Documentation
+    ├── supplementary_material.pdf
+    └── data_documentation.md
 ```
+
+---
+
+## Figures
+
+All figures are generated in `results/figures/` and organized by analysis type.
+
+### 1. Benchmark Analysis Figures (COMPREHENSIVE BENCHMARK ANALYSIS)
+
+| Figure | Description | Location |
+|--------|-------------|----------|
+| `hv_comparison_boxplot.png` | Hypervolume distribution across 5 runs for 11 benchmark problems | `results/figures/` |
+| `igd_comparison_boxplot.png` | IGD distribution across 5 runs for 11 benchmark problems | `results/figures/` |
+| `hv_statistical_significance.png` | Statistical significance of HV differences (p-values) | `results/figures/` |
+| `igd_statistical_significance.png` | Statistical significance of IGD differences (p-values) | `results/figures/` |
+
+### 2. ZDT Pareto Front Comparisons
+
+| Figure | Description | Problem Characteristics |
+|--------|-------------|------------------------|
+| `ZDT1_pareto_front.png` | Convex Pareto front comparison | Convex |
+| `ZDT2_pareto_front.png` | Concave Pareto front comparison | Concave |
+| `ZDT3_pareto_front.png` | Disconnected Pareto front | Disconnected |
+| `ZDT4_pareto_front.png` | Many local optima | Multi-modal |
+| `ZDT6_pareto_front.png` | Non-uniform density | Non-uniform |
+| `ZDT_suite_comparison.png` | Combined 2×3 subplot of all ZDT problems | All ZDT |
+
+### 3. DTLZ Pareto Front Comparisons (3D)
+
+| Figure | Description | Location |
+|--------|-------------|----------|
+| `DTLZ1_pareto_front.png` | Linear Pareto front (3D) | `results/figures/analysis_plots/pareto_fronts/` |
+| `DTLZ2_pareto_front.png` | Concave Pareto front (3D) | `results/figures/analysis_plots/pareto_fronts/` |
+| `DTLZ3_pareto_front.png` | Multi-modal with many local optima | `results/figures/analysis_plots/pareto_fronts/` |
+| `DTLZ4_pareto_front.png` | Biased density distribution | `results/figures/analysis_plots/pareto_fronts/` |
+| `*_2D_projections.png` | 2D projections (f1-f2, f1-f3, f2-f3) | `results/figures/analysis_plots/pareto_fronts/` |
+
+### 4. WFG Pareto Front Comparisons (3D)
+
+| Figure | Description | Location |
+|--------|-------------|----------|
+| `WFG1_pareto_front.png` | Mixed convex/concave, biased | `results/figures/analysis_plots/pareto_fronts/` |
+| `WFG2_pareto_front.png` | Disconnected, constrained | `results/figures/analysis_plots/pareto_fronts/` |
+
+### 5. GNN & PPO Validation Figures
+
+| Figure | Description | Source |
+|--------|-------------|--------|
+| `per_objective_accuracy.png` | R² scatter plots for cost, emissions, time predictions | GNN validation |
+| `accuracy_tradeoff_surface.png` | 3D trade-off surface (accuracy vs evaluation reduction vs HV improvement) | GNN validation |
+| `error_distribution_analysis.png` | Error distributions, biases, skewness, over/under prediction | GNN validation |
+| `computational_breakdown.png` | Time per evaluation: exact vs GNN components | GNN validation |
+| `systematic_bias_analysis.png` | Systematic biases across objective magnitudes | GNN validation |
+| `pareto_comparison_3d.png` | Pareto front comparison: exact vs surrogate | GNN validation |
+
+### 6. En-NSGA-II vs Exact Method Figures
+
+| Figure | Description | Location |
+|--------|-------------|----------|
+| `convergence_S1_8nodes.png` | Convergence plots for S1 (8 nodes) | `results/figures/` |
+| `convergence_S2_12nodes.png` | Convergence plots for S2 (12 nodes) | `results/figures/` |
+| `convergence_S3_15nodes.png` | Convergence plots for S3 (15 nodes) | `results/figures/` |
+| `convergence_S4_18nodes.png` | Convergence plots for S4 (18 nodes) | `results/figures/` |
+| `instance_comparison_summary.png` | Cross-instance comparison: optimality gaps, success rates, runtime, scalability | `results/figures/` |
+
+Each convergence plot includes:
+- **Top-left**: Individual run convergence (10 runs)
+- **Top-right**: Mean convergence with ±1σ confidence interval
+- **Bottom-left**: Success rate evolution (≤1% optimality gap)
+- **Bottom-right**: Final cost distribution histogram with normal fit
+
+### 7. LC-CTRP Case Study Figures
+
+| Figure | Description | Source |
+|--------|-------------|--------|
+| `Emissions Performance vs Carbon Price` | Algorithm emissions across 10 price levels | Carbon sensitivity |
+| `Cost Performance vs Carbon Price` | Algorithm costs across 10 price levels | Carbon sensitivity |
+| `Modal Shift Response to Carbon Pricing` | Rail mode share vs carbon price with zone shading | Carbon sensitivity |
+| `Algorithm Performance Summary Table` | Emissions/cost table for all algorithms at all prices | Summary |
+| `Algorithm Convergence Curves` | Cost convergence over generations | Case study |
+| `Cost-Emissions Trade-off` | Pareto frontier with ideal point | Case study |
+| `Border Crossing Distributions` | VaR/CVaR at 95% for Busia, Malaba, Katuna | Data analysis |
+| `Algorithm Performance Radar` | Multi-dimensional comparison (6 metrics) | Summary |
+| `Route Emissions Bar Chart` | Top 8 route segments by CO₂ emissions | Data analysis |
+| `Marginal Abatement Cost Curve` | MAC curve with 5 abatement measures | Policy analysis |
 
 ---
 
@@ -174,8 +265,8 @@ NewRepo/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YvesNDIKURIYO-2022/NewRepo.git
-cd NewRepo
+git clone https://github.com/YvesNDIKURIYO-2022/En-NSGA-II-4-LC-CTRP.git
+cd En-NSGA-II-4-LC-CTRP
 ```
 
 ### 2. Install dependencies
@@ -184,205 +275,49 @@ cd NewRepo
 pip install -r requirements.txt
 ```
 
-### 3. Run the full analysis
+### 3. Run analyses
 
 ```bash
-python scripts/run_full_analysis.py
+# Comprehensive benchmark (11 problems, 5 runs each)
+python "scripts/COMPREHENSIVE BENCHMARK ANALYSIS 22 Instances.py"
+
+# GNN and PPO validation
+python "scripts/GNN and PPO validation.py"
+
+# En-NSGA-II vs Exact Method
+python "scripts/En-NSGA-II vs Exact Method.py"
+
+# LC-CTRP case study with carbon price sensitivity
+python "scripts/Case study LC-CTRP ANALYSIS - ALL 5 ALGORITHMS + CARBON PRICE SENSITIVITY.py"
 ```
 
-### 4. Explore Jupyter notebooks
+---
 
-```bash
-jupyter notebook notebooks/
-```
+## Requirements
 
-### 5. Generate all figures
-
-```bash
-python scripts/generate_all_figures.py
+```txt
+numpy>=1.21.0
+pandas>=1.3.0
+matplotlib>=3.4.0
+seaborn>=0.11.0
+scipy>=1.7.0
 ```
 
 ---
 
 ## Data Sources
 
-The analysis integrates 17 independent datasets from 9 authoritative sources:
-
-| Source | Data Type | Years | Records |
-|--------|-----------|-------|---------|
-| **NCTTCA Transport Observatory** | Road CO₂ emissions, pollutants, border times, transit times | 2009-2026 | 132+ |
-| **Kenya Ministry of Transport** | Rail GHG emissions, national transport emissions | 2015-2022 | 16 |
-| **Tanzania Ports Authority** | Lake ports cargo (Victoria, Tanganyika, Nyasa) | 2022 | 3 lakes |
-| **EDGAR Database** | Country-level GHG emissions | 1990-2024 | 7 countries |
-| **International Energy Agency** | Uganda CO₂ emissions | 2023 | 1 country |
-| **Worldometer** | Uganda historical CO₂ | 1970-2024 | 55 years |
-| **Climate Change Tracker** | Kenya GHG breakdown | 2024 | 1 country |
-| **Kenya Ports Authority** | Cargo volumes, port performance | 2009-2018 | Monthly |
-| **KeNHA / KRA / URA / RRA** | Weighbridge, customs clearance | 2010-2022 | Monthly |
-
-### Data Availability Statement
-
-All data used in this study are publicly available from:
-
-- **NCTTCA Transport Observatory:** https://top.ttcanc.org
-- **EDGAR Database:** https://edgar.jrc.ec.europa.eu
-- **IEA Data Services:** https://www.iea.org
-- **Worldometer:** https://www.worldometers.info
-- **Kenya Ministry of Transport:** https://www.transport.go.ke
-- **Tanzania Ports Authority:** https://www.ports.go.tz
-- **Kenya Ports Authority:** https://www.kpa.co.ke
-- **Climate Change Tracker:** https://climate-change-tracker.org
-
-Processed data and analysis scripts are available from the corresponding author upon reasonable request.
-
----
-
-## Key Results
-
-### Road Freight Emissions by Route
-
-| Rank | Route Section | CO₂ (tonnes) | % of Total |
-|------|---------------|--------------|-------------|
-| 1 | Mombasa → Nairobi | 1,455,474 | 39.8% |
-| 2 | Nairobi → Malaba | 862,799 | 23.6% |
-| 3 | Malaba → Kampala | 325,590 | 8.9% |
-| 4 | Malaba → Elegu | 239,674 | 6.5% |
-| 5 | Kigali → Rusizi | 141,177 | 3.9% |
-| 6 | Kobero-Gatumba (Burundi) | 109,636 | 3.0% |
-| | **TOTAL** | **3,660,520** | **100%** |
-
-### CO₂ Emissions by Vehicle Class
-
-| Vehicle Class | CO₂ (tonnes) | Percentage |
-|---------------|--------------|------------|
-| HCV-5&6 Axle | 2,445,939 | 66.8% |
-| LDT/2-Axle | 776,262 | 21.2% |
-| MCV-3Axle | 318,774 | 8.7% |
-| MCV-4Axle | 74,959 | 2.0% |
-| HCV-7&8 Axle | 42,522 | 1.2% |
-| HCV->8 Axle | 2,062 | 0.1% |
-
-### Pollutant Emissions
-
-| Pollutant | Total (kg) | Percentage |
-|-----------|------------|------------|
-| NOx | 19,685,911 | 94.3% |
-| PM10 | 978,857 | 4.7% |
-| BC | 212,003 | 1.0% |
-
-### Border Crossing Risk (VaR/CVaR at 95%)
-
-| Border | Mean (min) | VaR(95%) (min) | CVaR(95%) (min) | EAC Target |
-|--------|------------|----------------|-----------------|------------|
-| Busia | 98.2 | 122.9 | 129.1 | 30 |
-| Malaba | 91.0 | 110.7 | 115.8 | 30 |
-| Katuna | 141.0 | 173.9 | 182.9 | 30 |
-
-### Lake Ports Cargo (2022)
-
-| Lake | Cargo (tons) | Route to Bujumbura |
-|------|-------------|---------------------|
-| Lake Tanganyika | 295,560 | Direct via Kigoma |
-| Lake Victoria | 235,042 | Alternative via Uganda |
-| Lake Nyasa | 5,410 | Southern corridor |
-
-### National Validation
-
-| Country | Corridor CO₂ (Mt) | National (Mt) | Percentage | Source |
-|---------|-------------------|---------------|------------|--------|
-| Kenya | 2.59 | 102.84 | 2.5% | EDGAR |
-| Uganda | 0.83 | 8.25 | 10.1% | Worldometer |
-| Rwanda | 0.34 | 8.35 | 4.1% | EDGAR |
-
-### Marginal Abatement Cost (MAC) Curve
-
-| Measure | Abatement (tonnes) | Cost ($/tonne) |
-|---------|-------------------|----------------|
-| Driver eco-training | 183,026 | **$10** |
-| Empty trip reduction | 378,674 | $25 |
-| Modal shift to rail | 549,078 | $50 |
-| SGR electrification | 53,000 | $75 |
-| EV truck deployment (10% fleet) | 439,262 | $150 |
-
-### Decarbonization Potential
-
-| Scenario | Reduction (tonnes) | % of Baseline |
-|----------|-------------------|----------------|
-| Fuel Efficiency (10%) | 366,052 | 10.0% |
-| Modal Shift to Rail | 549,078 | 15.0% |
-| Empty Trip Reduction (45%→30%) | 378,674 | 10.3% |
-| SGR Electrification | 53,000 | 1.4% |
-| EV Trucks (10% fleet) | 439,262 | 12.0% |
-| **COMBINED** | **1,786,067** | **48.8%** |
-
----
-
-## Figures
-
-All figures are generated in `results/figures/`:
-
-| Figure | Description |
-|--------|-------------|
-| `figure_top_routes_co2.png` | Top 8 routes by CO₂ emissions |
-| `figure_emissions_by_vehicle_class.png` | CO₂ distribution by vehicle class (pie chart) |
-| `figure_mac_curve.png` | Marginal Abatement Cost curve |
-| `figure_border_crossing_times.png` | Border crossing comparison with EAC target |
-| `figure_rail_emissions_trend.png` | Kenya rail emissions (2015-2022) |
-| `figure_national_validation.png` | Corridor vs national emissions validation |
-| `figure_lake_ports_cargo.png` | Lake ports cargo traffic |
-| `figure_algorithm_comparison_bars.png` | Algorithm performance comparison |
-| `figure_carbon_price_sensitivity.png` | En-NSGA-II carbon price sensitivity |
-| `figure_carbon_price_emissions_comparison.png` | Emissions vs price (all algorithms) |
-| `figure_carbon_price_cost_comparison.png` | Cost vs price (all algorithms) |
-| `figure_carbon_price_tradeoff_comparison.png` | Cost-emissions trade-off (all algorithms) |
-
----
-
-## Case Study: Mombasa–Bujumbura Corridor
-
-The case study focuses on the **Mombasa–Bujumbura corridor**, a critical East African trade route connecting the Port of Mombasa (Kenya) to Bujumbura (Burundi), traversing Uganda and Rwanda.
-
-### Corridor Map
-
-```
-MOMBASA (Kenya) ──(485 km, 1.46 MMt CO₂)──► NAIROBI
-         │
-         │ (480 km, 0.86 MMt CO₂)
-         ▼
-    MALABA (Kenya-Uganda Border)
-         │
-         │ (171 km, ~0.06 MMt CO₂)
-         ▼
-    KAMPALA (Uganda)
-         │
-         │ (508 km, ~0.05 MMt CO₂)
-         ▼
-    KIGALI (Rwanda)
-         │
-         │ (298 km, ~0.02 MMt CO₂)
-         ▼
-    BUJUMBURA (Burundi) ★ DESTINATION
-
-Total Distance: 1,942 km
-Total Estimated CO₂: ~2.44 MMt CO₂
-```
-
-### Key Corridor Characteristics
-
-| Feature | Description |
-|---------|-------------|
-| **Nodes** | 19 nodes across 5 countries |
-| **Arcs** | 34 bidirectional arcs |
-| **Modes** | Road, railway, waterway (Lake Victoria, Lake Tanganyika) |
-| **Primary cargo** | Containerized freight |
-| **Annual traffic** | ~26,790 trucks/day |
-| **Rail share** | 26% (up from 5% in 2017) |
+| Source | Data Type | Link |
+|--------|-----------|------|
+| NCTTCA Transport Observatory | Road emissions, pollutants, border times | https://top.ttcanc.org |
+| EDGAR Database | Country-level GHG emissions | https://edgar.jrc.ec.europa.eu |
+| Kenya Ministry of Transport | Rail emissions | https://www.transport.go.ke |
+| Tanzania Ports Authority | Lake ports cargo | https://www.ports.go.tz |
+| Kenya Ports Authority | Cargo volumes | https://www.kpa.co.ke |
 
 ---
 
 ## Citation
-
-If you use this code or data in your research, please cite:
 
 ```bibtex
 @article{Ndikuriyo2026,
@@ -398,34 +333,29 @@ If you use this code or data in your research, please cite:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
 ## Contact
 
 **Yves Ndikuriyo**  
-*PhD Candidate*  
-School of Traffic and Transportation Engineering  
-Central South University, Changsha, China  
-Email: yvesndikuriyo@csu.edu.cn  
-ORCID: 0009-0006-9324-7265
+PhD Candidate, Central South University, Changsha, China  
+📧 yvesndikuriyo@csu.edu.cn  
+🔗 [ORCID: 0009-0006-9324-7265](https://orcid.org/0009-0006-9324-7265)
 
 **Professor Yinggui Zhang**  
-Email: ygzhang@csu.edu.cn  
-ORCID: 0000-0002-5790-0638
+📧 ygzhang@csu.edu.cn  
+🔗 [ORCID: 0000-0002-5790-0638](https://orcid.org/0000-0002-5790-0638)
 
 ---
 
 ## Acknowledgments
 
-This research was supported by:
-
-- **NCTTCA (Northern Corridor Transit and Transport Coordination Authority)** for providing Transport Observatory data
-- **Tanzania Ports Authority** for lake ports data
-- **Kenya Ministry of Transport** for rail emissions data
-- **EDGAR, IEA, Worldometer, Climate Change Tracker** for validation data
-- **TradeMark East Africa** for corridor performance reports
+- NCTTCA for Transport Observatory data
+- Tanzania Ports Authority for lake ports data
+- Kenya Ministry of Transport for rail emissions data
+- EDGAR, IEA, Worldometer, Climate Change Tracker for validation data
 
 ---
 
