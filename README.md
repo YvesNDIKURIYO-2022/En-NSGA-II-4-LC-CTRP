@@ -1,11 +1,11 @@
-# Research on Multi-objective Optimization of Low-Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm
+# Multi-Objective Optimization of Low-Carbon Container Routing Using PA-NSGA-II
 
 **Python** • **License** • **Paper** • **Data**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 
-An Enhanced NSGA-II Framework for Low-Carbon Container Routing on the Mombasa-Bujumbura Corridor.
+A Parameter-Adaptive NSGA-II Framework for Low-Carbon Container Routing on the Mombasa-Bujumbura Corridor.
 
 ---
 
@@ -13,13 +13,13 @@ An Enhanced NSGA-II Framework for Low-Carbon Container Routing on the Mombasa-Bu
 
 This repository contains the complete code, data, and analysis for the paper:
 
-> **"Research on Multi-objective Optimization of Low Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm"**
+> **"Multi-Objective Optimization of Low-Carbon Container Routing Using Parameter-Adaptive NSGA-II"**
 >
 > *Yves Ndikuriyo, Yinggui Zhang, Dung Davou Fom*
 >
 > *School of Traffic and Transportation Engineering, Central South University, Changsha, China*
 >
-> *Journal of Cleaner Production (Under Review)*
+> *Transportation Research Part D: Transport and Environment (Under Review)*
 
 ### What is LC-CTRP?
 
@@ -31,27 +31,27 @@ The **Low-Carbon Container Transportation Routing Problem (LC-CTRP)** optimizes 
 | **Emissions** | CO₂ emissions from road, rail, and waterway transport | kg CO₂ |
 | **Time** | Total transit time including border delays and transshipment | hours |
 
-### What is En-NSGA-II?
+### What is PA-NSGA-II?
 
-The **Enhanced NSGA-II (En-NSGA-II)** is a hybrid multi-objective optimization framework that integrates:
+The **Parameter-Adaptive NSGA-II (PA-NSGA-II)** is a hybrid multi-objective optimization framework that integrates:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           En-NSGA-II Framework                               │
+│                         PA-NSGA-II Framework                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│   │     PPO      │───▶│     GNN      │───▶│   NSGA-II    │                  │
-│   │  Adaptive    │    │   Surrogate  │    │   Pareto     │                  │
-│   │ Initialization│    │  Evaluation  │    │    Search    │                  │
+│   │  Adaptive    │───▶│   Size-      │───▶│   NSGA-II    │                  │
+│   │     PPO      │    │   Adaptive   │    │   Pareto     │                  │
+│   │  Initialization│   │   Config.   │    │    Search    │                  │
 │   └──────────────┘    └──────────────┘    └──────────────┘                  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 | Component | Description | Key Metric |
 |-----------|-------------|------------|
-| **PPO** | Learns adaptive initialization policies | 86.2% cost reduction vs random |
-| **GNN** | Fast surrogate evaluation of emissions/cost | R² = 0.935/0.954, 5-6× speedup |
-| **NSGA-II** | Pareto frontier search with enhancements | 68% lower emissions vs standard |
+| **Adaptive-PPO** | Learns adaptive initialization policies | 53.2% lower emissions vs random |
+| **Size-Adaptive Config.** | Population size, generations, bias factors scale with n | 37%→57% advantage (20→200 customers) |
+| **PA-NSGA-II** | Pareto frontier search with adaptive operators | 45.4% lower emissions vs NSGA-II/SPEA2 |
 
 ---
 
@@ -59,54 +59,56 @@ The **Enhanced NSGA-II (En-NSGA-II)** is a hybrid multi-objective optimization f
 
 | Finding | Value | Implication |
 |---------|-------|-------------|
-| Total road CO₂ emissions | 3.66 million tonnes | Baseline for corridor |
-| En-NSGA-II baseline emissions | 474.9 kg CO₂ | 68% lower than NSGA-II |
-| En-NSGA-II baseline cost | $346.15 | Only 10% premium |
-| Optimal carbon price | $55/ton CO₂ | Policy target |
-| Minimum emissions achieved | 336.0 kg CO₂ | 29% reduction |
-| Total decarbonization potential | 1.79 million tonnes | 48.8% of baseline |
-| Most cost-effective measure | Driver training | $10/tonne |
+| PA-NSGA-II win rate (24 Prins instances) | 83.3% (20/24) | Algorithmic superiority |
+| Mean emissions reduction vs NSGA-II/SPEA2 | 45.4% | Significant decarbonization |
+| Adaptive-PPO vs random initialization | 53.2% lower (72.7 vs 155.3 kg) | Initialization matters |
+| Zero variance across 3 runs | 24/24 instances | Deterministic reliability |
+| Baseline corridor emissions (PA-NSGA-II/SPEA2) | 392.9 kg CO₂ | Global optimum identified |
+| NSGA-II baseline emissions | 422.3 kg CO₂ | 7.0% higher than optimum |
+| Optimal carbon price | $150/ton CO₂ | Policy target |
+| Minimum emissions achieved | 346.2 kg CO₂ | 24.7% reduction from $50/ton |
+| Wet season performance (PA-NSGA-II) | -12.5% emissions | Adaptive modal shift |
+| Wet season performance (SPEA2) | +30.1% emissions | Contrast in robustness |
 
 ---
 
-## Algorithm Performance Summary (11 Benchmark Problems)
+## Algorithm Performance Summary (24 Prins Instances)
 
-| Algorithm | HV Wins | IGD Wins | Spread Wins | Runtime Wins | Win Rate |
-|-----------|---------|----------|-------------|--------------|----------|
-| **En-NSGA-II** | 10 (90.9%) | 8 (72.7%) | 7 (63.6%) | 0 | **56.8%** |
-| NSGA-II | 1 (9.1%) | 3 (27.3%) | 3 (27.3%) | 0 | 15.9% |
-| SPEA2 | 0 | 0 | 1 (9.1%) | 0 | 2.3% |
-| MOEA/D | 0 | 0 | 0 | 11 (100%) | 25.0% |
+| Metric | PA-NSGA-II | NSGA-II | SPEA2 |
+|--------|------------|---------|-------|
+| Mean emissions (kg) | **67.7** | 123.9 | 121.2 |
+| Mean cost (USD) | 302,560 | 164,744 | **157,691** |
+| Win rate (% instances) | **83.3%** | — | — |
+| Mean Pareto size (large instances) | **3–5** | 1 | 1 |
+| Computational time (s) | 6.60 | 5.99 | **5.67** |
 
-### HV Performance (Higher is better)
+### Performance by Instance Size
 
-| Problem | En-NSGA-II | NSGA-II | SPEA2 | MOEA/D |
-|---------|------------|---------|-------|--------|
-| ZDT1 | **99.33** | 79.98 | 65.58 | 63.52 |
-| ZDT2 | **99.66** | 82.57 | 79.49 | 94.52 |
-| ZDT3 | **100.69** | 81.36 | 75.62 | 65.21 |
-| ZDT4 | 9,706.11 | **9,769.00** | 9,640.21 | 8,745.60 |
-| ZDT6 | **100.51** | 36.55 | 36.41 | 35.21 |
-| DTLZ2 | **2.68** | 2.43 | 1.04 | 2.54 |
-| WFG1 | **27.00** | 25.52 | 17.98 | 25.15 |
-| WFG2 | **27.00** | 26.96 | 25.19 | 26.94 |
+| Instance Size | PA-NSGA-II Advantage |
+|---------------|---------------------|
+| 20 customers | 28% |
+| 50 customers | 35% |
+| 100 customers | 48% |
+| 200 customers | 55% |
 
-### IGD Performance (Lower is better)
+---
 
-| Problem | En-NSGA-II | NSGA-II | SPEA2 | MOEA/D |
-|---------|------------|---------|-------|--------|
-| ZDT1 | **0.011** | 0.934 | 2.566 | 1.551 |
-| ZDT2 | **0.011** | 1.415 | 2.361 | 1.486 |
-| ZDT3 | **0.218** | 0.409 | 1.573 | 0.618 |
-| ZDT6 | **0.008** | 5.107 | 6.341 | 5.396 |
-| DTLZ2 | **0.096** | 0.190 | 0.467 | 0.182 |
+## Carbon Price Sensitivity (Mombasa–Bujumbura Corridor)
+
+| Carbon Price | PA-NSGA-II Emissions | NSGA-II Emissions | SPEA2 Emissions |
+|--------------|---------------------|-------------------|-----------------|
+| $50/ton | 459.7 kg | 660.9 kg | 1,211.9 kg |
+| $100/ton | 401.7 kg | 874.4 kg | 1,026.0 kg |
+| $150/ton | **346.2 kg** | 653.9 kg | 1,081.3 kg |
+
+**Key insight:** Carbon pricing alone cannot induce modal shift. The rail share remains constant across $0–150/ton CO₂ due to transshipment penalties (12 hours, $37.50) and border delays (12–24 hours, $250).
 
 ---
 
 ## Repository Structure
 
 ```
-En-NSGA-II-4-LC-CTRP/
+PA-NSGA-II-4-LC-CTRP/
 │
 ├── README.md                                    # This file
 ├── LICENSE                                      # MIT License
@@ -123,49 +125,26 @@ En-NSGA-II-4-LC-CTRP/
 │
 ├── scripts/                                     # Execution scripts
 │   ├── Statistical Analysis.py
-│   ├── GNN and PPO validation.py
-│   ├── En-NSGA-II vs Exact Method.py
-│   ├── COMPREHENSIVE BENCHMARK ANALYSIS 22 Instances.py
+│   ├── Initialization Validation.py
+│   ├── PA-NSGA-II vs Baseline.py
+│   ├── COMPREHENSIVE BENCHMARK ANALYSIS.py
 │   └── Case study LC-CTRP ANALYSIS.py
 │
 ├── results/
 │   ├── figures/                                 # Generated figures
-│   │   ├── hv_comparison_boxplot.png
-│   │   ├── igd_comparison_boxplot.png
-│   │   ├── hv_statistical_significance.png
-│   │   ├── igd_statistical_significance.png
-│   │   ├── per_objective_accuracy.png
-│   │   ├── accuracy_tradeoff_surface.png
-│   │   ├── error_distribution_analysis.png
-│   │   ├── computational_breakdown.png
-│   │   ├── systematic_bias_analysis.png
-│   │   ├── pareto_comparison_3d.png
-│   │   ├── convergence_*.png
-│   │   ├── instance_comparison_summary.png
-│   │   └── analysis_plots/pareto_fronts/
-│   │       ├── ZDT1_pareto_front.png
-│   │       ├── ZDT2_pareto_front.png
-│   │       ├── ZDT3_pareto_front.png
-│   │       ├── ZDT4_pareto_front.png
-│   │       ├── ZDT6_pareto_front.png
-│   │       ├── DTLZ1_pareto_front.png
-│   │       ├── DTLZ2_pareto_front.png
-│   │       ├── DTLZ3_pareto_front.png
-│   │       ├── DTLZ4_pareto_front.png
-│   │       ├── WFG1_pareto_front.png
-│   │       ├── WFG2_pareto_front.png
-│   │       └── ZDT_suite_comparison.png
+│   │   ├── init_size_performance.png
+│   │   ├── init_boxplot.png
+│   │   ├── init_radar.png
+│   │   ├── carbon_sensitivity.png
+│   │   ├── seasonal_sensitivity.png
+│   │   ├── corridor_map.png
+│   │   └── convergence_plots/
 │   │
 │   └── tables/                                  # Summary tables
 │       ├── complete_benchmark_results.csv
 │       ├── complete_summary_results.csv
 │       ├── statistical_significance.csv
-│       ├── per_objective_metrics.csv
-│       ├── accuracy_tradeoff_analysis.csv
-│       ├── computational_components.csv
-│       ├── error_distribution_analysis.csv
-│       ├── detailed_validation_results.csv
-│       ├── validation_summary_table.csv
+│       ├── path_selection_results.csv
 │       └── lc_ctrp_complete_results.json
 │
 └── docs/                                        # Documentation
@@ -179,84 +158,47 @@ En-NSGA-II-4-LC-CTRP/
 
 All figures are generated in `results/figures/` and organized by analysis type.
 
-### 1. Benchmark Analysis Figures (COMPREHENSIVE BENCHMARK ANALYSIS)
+### 1. Initialization Validation Figures
 
-| Figure | Description | Location |
-|--------|-------------|----------|
-| `hv_comparison_boxplot.png` | Hypervolume distribution across 5 runs for 11 benchmark problems | `results/figures/` |
-| `igd_comparison_boxplot.png` | IGD distribution across 5 runs for 11 benchmark problems | `results/figures/` |
-| `hv_statistical_significance.png` | Statistical significance of HV differences (p-values) | `results/figures/` |
-| `igd_statistical_significance.png` | Statistical significance of IGD differences (p-values) | `results/figures/` |
+| Figure | Description |
+|--------|-------------|
+| `init_size_performance.png` | Performance stratified by instance size (37%→57% advantage) |
+| `init_boxplot.png` | Distribution of best emissions across five methods |
+| `init_radar.png` | Multi-criteria radar chart (4 metrics) |
 
-### 2. ZDT Pareto Front Comparisons
+### 2. Benchmark Analysis Figures
 
-| Figure | Description | Problem Characteristics |
-|--------|-------------|------------------------|
-| `ZDT1_pareto_front.png` | Convex Pareto front comparison | Convex |
-| `ZDT2_pareto_front.png` | Concave Pareto front comparison | Concave |
-| `ZDT3_pareto_front.png` | Disconnected Pareto front | Disconnected |
-| `ZDT4_pareto_front.png` | Many local optima | Multi-modal |
-| `ZDT6_pareto_front.png` | Non-uniform density | Non-uniform |
-| `ZDT_suite_comparison.png` | Combined 2×3 subplot of all ZDT problems | All ZDT |
+| Figure | Description |
+|--------|-------------|
+| `hv_comparison_boxplot.png` | Hypervolume distribution across 24 Prins instances |
+| `igd_comparison_boxplot.png` | IGD distribution across 24 Prins instances |
+| `hv_statistical_significance.png` | Statistical significance of HV differences (p-values) |
+| `igd_statistical_significance.png` | Statistical significance of IGD differences (p-values) |
 
-### 3. DTLZ Pareto Front Comparisons (3D)
+### 3. Case Study Figures
 
-| Figure | Description | Location |
-|--------|-------------|----------|
-| `DTLZ1_pareto_front.png` | Linear Pareto front (3D) | `results/figures/analysis_plots/pareto_fronts/` |
-| `DTLZ2_pareto_front.png` | Concave Pareto front (3D) | `results/figures/analysis_plots/pareto_fronts/` |
-| `DTLZ3_pareto_front.png` | Multi-modal with many local optima | `results/figures/analysis_plots/pareto_fronts/` |
-| `DTLZ4_pareto_front.png` | Biased density distribution | `results/figures/analysis_plots/pareto_fronts/` |
-| `*_2D_projections.png` | 2D projections (f1-f2, f1-f3, f2-f3) | `results/figures/analysis_plots/pareto_fronts/` |
+| Figure | Description |
+|--------|-------------|
+| `corridor_map.png` | East African transport network map (19 nodes, 34 arcs) |
+| `carbon_sensitivity.png` | Emissions performance across carbon prices ($0–150/ton) |
+| `seasonal_sensitivity.png` | Performance across dry, wet, peak seasons |
+| `border_var.png` | Border crossing delay distributions (VaR/CVaR at 95%) |
+| `path_selection.png` | Algorithm path consistency across 7 price levels |
 
-### 4. WFG Pareto Front Comparisons (3D)
+### 4. Convergence Analysis Figures
 
-| Figure | Description | Location |
-|--------|-------------|----------|
-| `WFG1_pareto_front.png` | Mixed convex/concave, biased | `results/figures/analysis_plots/pareto_fronts/` |
-| `WFG2_pareto_front.png` | Disconnected, constrained | `results/figures/analysis_plots/pareto_fronts/` |
-
-### 5. GNN & PPO Validation Figures
-
-| Figure | Description | Source |
-|--------|-------------|--------|
-| `per_objective_accuracy.png` | R² scatter plots for cost, emissions, time predictions | GNN validation |
-| `accuracy_tradeoff_surface.png` | 3D trade-off surface (accuracy vs evaluation reduction vs HV improvement) | GNN validation |
-| `error_distribution_analysis.png` | Error distributions, biases, skewness, over/under prediction | GNN validation |
-| `computational_breakdown.png` | Time per evaluation: exact vs GNN components | GNN validation |
-| `systematic_bias_analysis.png` | Systematic biases across objective magnitudes | GNN validation |
-| `pareto_comparison_3d.png` | Pareto front comparison: exact vs surrogate | GNN validation |
-
-### 6. En-NSGA-II vs Exact Method Figures
-
-| Figure | Description | Location |
-|--------|-------------|----------|
-| `convergence_S1_8nodes.png` | Convergence plots for S1 (8 nodes) | `results/figures/` |
-| `convergence_S2_12nodes.png` | Convergence plots for S2 (12 nodes) | `results/figures/` |
-| `convergence_S3_15nodes.png` | Convergence plots for S3 (15 nodes) | `results/figures/` |
-| `convergence_S4_18nodes.png` | Convergence plots for S4 (18 nodes) | `results/figures/` |
-| `instance_comparison_summary.png` | Cross-instance comparison: optimality gaps, success rates, runtime, scalability | `results/figures/` |
+| Figure | Description |
+|--------|-------------|
+| `convergence_S1_8nodes.png` | Convergence for 8-node network |
+| `convergence_S2_12nodes.png` | Convergence for 12-node network |
+| `convergence_S3_15nodes.png` | Convergence for 15-node network |
+| `convergence_S4_18nodes.png` | Convergence for 18-node network |
 
 Each convergence plot includes:
-- **Top-left**: Individual run convergence (10 runs)
-- **Top-right**: Mean convergence with ±1σ confidence interval
-- **Bottom-left**: Success rate evolution (≤1% optimality gap)
-- **Bottom-right**: Final cost distribution histogram with normal fit
-
-### 7. LC-CTRP Case Study Figures
-
-| Figure | Description | Source |
-|--------|-------------|--------|
-| `Emissions Performance vs Carbon Price` | Algorithm emissions across 10 price levels | Carbon sensitivity |
-| `Cost Performance vs Carbon Price` | Algorithm costs across 10 price levels | Carbon sensitivity |
-| `Modal Shift Response to Carbon Pricing` | Rail mode share vs carbon price with zone shading | Carbon sensitivity |
-| `Algorithm Performance Summary Table` | Emissions/cost table for all algorithms at all prices | Summary |
-| `Algorithm Convergence Curves` | Cost convergence over generations | Case study |
-| `Cost-Emissions Trade-off` | Pareto frontier with ideal point | Case study |
-| `Border Crossing Distributions` | VaR/CVaR at 95% for Busia, Malaba, Katuna | Data analysis |
-| `Algorithm Performance Radar` | Multi-dimensional comparison (6 metrics) | Summary |
-| `Route Emissions Bar Chart` | Top 8 route segments by CO₂ emissions | Data analysis |
-| `Marginal Abatement Cost Curve` | MAC curve with 5 abatement measures | Policy analysis |
+- Individual run convergence (10 runs)
+- Mean convergence with ±1σ confidence interval
+- Success rate evolution (≤1% optimality gap)
+- Final cost distribution histogram
 
 ---
 
@@ -265,8 +207,8 @@ Each convergence plot includes:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YvesNDIKURIYO-2022/En-NSGA-II-4-LC-CTRP.git
-cd En-NSGA-II-4-LC-CTRP
+git clone https://github.com/YvesNDIKURIYO-2022/PA-NSGA-II-4-LC-CTRP.git
+cd PA-NSGA-II-4-LC-CTRP
 ```
 
 ### 2. Install dependencies
@@ -278,17 +220,17 @@ pip install -r requirements.txt
 ### 3. Run analyses
 
 ```bash
-# Comprehensive benchmark (11 problems, 5 runs each)
-python "scripts/COMPREHENSIVE BENCHMARK ANALYSIS 22 Instances.py"
+# Comprehensive benchmark (24 Prins instances)
+python "scripts/COMPREHENSIVE BENCHMARK ANALYSIS.py"
 
-# GNN and PPO validation
-python "scripts/GNN and PPO validation.py"
+# Initialization validation (Adaptive-PPO vs 4 baselines)
+python "scripts/Initialization Validation.py"
 
-# En-NSGA-II vs Exact Method
-python "scripts/En-NSGA-II vs Exact Method.py"
+# PA-NSGA-II vs NSGA-II/SPEA2
+python "scripts/PA-NSGA-II vs Baseline.py"
 
-# LC-CTRP case study with carbon price sensitivity
-python "scripts/Case study LC-CTRP ANALYSIS - ALL 5 ALGORITHMS + CARBON PRICE SENSITIVITY.py"
+# LC-CTRP case study with carbon price sensitivity (7 levels)
+python "scripts/Case study LC-CTRP ANALYSIS.py"
 ```
 
 ---
@@ -301,6 +243,9 @@ pandas>=1.3.0
 matplotlib>=3.4.0
 seaborn>=0.11.0
 scipy>=1.7.0
+pymoo>=0.6.0
+stable-baselines3>=2.0.0
+networkx>=2.6.0
 ```
 
 ---
@@ -314,6 +259,7 @@ scipy>=1.7.0
 | Kenya Ministry of Transport | Rail emissions | https://www.transport.go.ke |
 | Tanzania Ports Authority | Lake ports cargo | https://www.ports.go.tz |
 | Kenya Ports Authority | Cargo volumes | https://www.kpa.co.ke |
+| Prins Benchmarks | VRP instances (24 instances, 20–200 customers) | Augerat et al. (1995), Christofides et al. (1969) |
 
 ---
 
@@ -321,9 +267,9 @@ scipy>=1.7.0
 
 ```bibtex
 @article{Ndikuriyo2026,
-  title = {Research on Multi-objective Optimization of Low Carbon Container Transportation Routing Using an Enhanced NSGA2 Algorithm},
+  title = {Multi-Objective Optimization of Low-Carbon Container Routing Using Parameter-Adaptive NSGA-II},
   author = {Ndikuriyo, Yves and Zhang, Yinggui and Fom, Dung Davou},
-  journal = {Journal of Cleaner Production},
+  journal = {Transportation Research Part D: Transport and Environment},
   year = {2026},
   note = {Under review}
 }
@@ -355,10 +301,13 @@ PhD Candidate, Central South University, Changsha, China
 - NCTTCA for Transport Observatory data
 - Tanzania Ports Authority for lake ports data
 - Kenya Ministry of Transport for rail emissions data
-- EDGAR, IEA, Worldometer, Climate Change Tracker for validation data
+- Prins, Augerat, and Christofides for benchmark instances
+- School of Traffic and Transportation Engineering, Central South University
 
 ---
 
 <div align="center">
-  <sub>Built with Python • Analysis for Journal of Cleaner Production • Last updated: May 2026</sub>
+  <sub>Built with Python • Analysis for Transportation Research Part D • Last updated: June 2026</sub>
 </div>
+l | Transportation Research Part D |
+| Benchmark count | 24 Prins instances (explicitly stated) |
