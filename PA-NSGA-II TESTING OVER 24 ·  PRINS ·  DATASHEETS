@@ -32,7 +32,6 @@ sns.set_palette("Set2")
 # ============================================================================
 
 # Update this path to your Excel file
-EXCEL_PATH = Path(r"D:\Container Transportation Routing Problems\Manuscript3-A Low-carbon based Robust Optimization under uncertainty\Dataset - Prins LRP original instances and adapted instances.xlsx")
 
 OUTPUT_DIR = Path("./results_prins_complete")
 OUTPUT_DIR.mkdir(exist_ok=True)
