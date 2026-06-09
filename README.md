@@ -1,11 +1,11 @@
 # Multi-Objective Optimization of Low-Carbon Container Routing Using PA-NSGA-II
 
-**Python** • **License** • **Paper** • **Data**
+**Python** • **MIT License** • **Paper** • **Data**
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 
-A Parameter-Adaptive NSGA-II Framework for Low-Carbon Container Routing on the Mombasa-Bujumbura Corridor.
+A Parameter-Adaptive NSGA-II Framework for Low-Carbon Container Routing on the Mombasa–Bujumbura Corridor.
 
 ---
 
@@ -13,13 +13,13 @@ A Parameter-Adaptive NSGA-II Framework for Low-Carbon Container Routing on the M
 
 This repository contains the complete code, data, and analysis for the paper:
 
-> **"Multi-Objective Optimization of Low-Carbon Container Routing Using Parameter-Adaptive NSGA-II"**
+> **"A Parameter-Adaptive Multi-Objective Evolutionary Algorithm for Low-Carbon Container Routing under Uncertainty"**
 >
 > *Yves Ndikuriyo, Yinggui Zhang, Dung Davou Fom*
 >
 > *School of Traffic and Transportation Engineering, Central South University, Changsha, China*
 >
-> *Transportation Research Part D: Transport and Environment (Under Review)*
+> *Simulation Modelling Practice and Theory (Under Review)*
 
 ### What is LC-CTRP?
 
@@ -61,47 +61,58 @@ The **Parameter-Adaptive NSGA-II (PA-NSGA-II)** is a hybrid multi-objective opti
 |---------|-------|-------------|
 | PA-NSGA-II win rate (24 Prins instances) | 83.3% (20/24) | Algorithmic superiority |
 | Mean emissions reduction vs NSGA-II/SPEA2 | 45.4% | Significant decarbonization |
-| Adaptive-PPO vs random initialization | 53.2% lower (72.7 vs 155.3 kg) | Initialization matters |
-| Zero variance across 3 runs | 24/24 instances | Deterministic reliability |
-| Baseline corridor emissions (PA-NSGA-II/SPEA2) | 392.9 kg CO₂ | Global optimum identified |
-| NSGA-II baseline emissions | 422.3 kg CO₂ | 7.0% higher than optimum |
+| Adaptive-PPO vs random initialization | 53.2% lower | Initialization matters |
+| Zero variance across 50 runs | 24/24 instances | Deterministic reliability |
+| Baseline corridor emissions (PA-NSGA-II) | 356 kg CO₂ | Global optimum identified |
+| Baseline corridor emissions (NSGA-II) | 576 kg CO₂ | 38.2% higher than PA-NSGA-II |
 | Optimal carbon price | $150/ton CO₂ | Policy target |
-| Minimum emissions achieved | 346.2 kg CO₂ | 24.7% reduction from $50/ton |
-| Wet season performance (PA-NSGA-II) | -12.5% emissions | Adaptive modal shift |
-| Wet season performance (SPEA2) | +30.1% emissions | Contrast in robustness |
+| Minimum emissions achieved | 346 kg CO₂ | 24.7% reduction from $50/ton |
+| Cohen's d (effect size) | 0.55 (medium) | Statistically significant improvement |
+| Coefficient of variation (CV) | 2.584 | Most consistent algorithm |
 
 ---
 
 ## Algorithm Performance Summary (24 Prins Instances)
 
-| Metric | PA-NSGA-II | NSGA-II | SPEA2 |
-|--------|------------|---------|-------|
-| Mean emissions (kg) | **67.7** | 123.9 | 121.2 |
-| Mean cost (USD) | 302,560 | 164,744 | **157,691** |
-| Win rate (% instances) | **83.3%** | — | — |
-| Mean Pareto size (large instances) | **3–5** | 1 | 1 |
-| Computational time (s) | 6.60 | 5.99 | **5.67** |
+| Metric | PA-NSGA-II | NSGA-II | SPEA2 | NSGA-III |
+|--------|------------|---------|-------|----------|
+| Mean emissions (kg) | **67.7** | 123.9 | 121.2 | 121.8 |
+| Mean cost (USD) | 302,560 | 164,744 | **157,691** | 158,235 |
+| Mean hypervolume | **1.85×10¹¹** | 1.24×10⁹ | 2.36×10⁹ | 1.24×10⁹ |
+| Win rate (% instances) | **83.3%** | — | — | — |
+| Coefficient of variation (CV) | **2.58** | 12.69 | 13.52 | 9.27 |
+| Cohen's d vs PA-NSGA-II | — | 0.55 | 0.55 | 0.55 |
 
 ### Performance by Instance Size
 
 | Instance Size | PA-NSGA-II Advantage |
 |---------------|---------------------|
-| 20 customers | 28% |
-| 50 customers | 35% |
-| 100 customers | 48% |
-| 200 customers | 55% |
+| 20 customers | 37% |
+| 50 customers | 45% |
+| 100 customers | 51% |
+| 200 customers | 57% |
 
 ---
 
 ## Carbon Price Sensitivity (Mombasa–Bujumbura Corridor)
 
-| Carbon Price | PA-NSGA-II Emissions | NSGA-II Emissions | SPEA2 Emissions |
-|--------------|---------------------|-------------------|-----------------|
-| $50/ton | 459.7 kg | 660.9 kg | 1,211.9 kg |
-| $100/ton | 401.7 kg | 874.4 kg | 1,026.0 kg |
-| $150/ton | **346.2 kg** | 653.9 kg | 1,081.3 kg |
+| Carbon Price | PA-NSGA-II Emissions | NSGA-II Emissions | SPEA2 Emissions | NSGA-III Emissions |
+|--------------|---------------------|-------------------|-----------------|-------------------|
+| $50/ton | 356 kg | 576 kg | 992 kg | 720 kg |
+| $100/ton | 325 kg | 664 kg | 1,088 kg | 1,049 kg |
+| $150/ton | **346 kg** | 772 kg | 930 kg | 588 kg |
 
 **Key insight:** Carbon pricing alone cannot induce modal shift. The rail share remains constant across $0–150/ton CO₂ due to transshipment penalties (12 hours, $37.50) and border delays (12–24 hours, $250).
+
+---
+
+## Seasonal Sensitivity (Mombasa–Bujumbura Corridor)
+
+| Season | PA-NSGA-II | NSGA-II | SPEA2 | NSGA-III |
+|--------|------------|---------|-------|----------|
+| Dry | 356 kg | 576 kg | 992 kg | 720 kg |
+| Wet | 471 kg | 743 kg | 1,248 kg | 721 kg |
+| Peak | 471 kg | 855 kg | 1,033 kg | 703 kg |
 
 ---
 
@@ -117,88 +128,50 @@ PA-NSGA-II-4-LC-CTRP/
 ├── data/
 │   ├── raw/                                     # Original datasets
 │   └── processed/                               # Cleaned data
-│       ├── algorithm_results.csv
-│       ├── carbon_price_sensitivity.csv
-│       ├── corridor_emissions.csv
-│       ├── border_crossing_summary.csv
-│       └── lake_ports_cargo.csv
+│       ├── complete_pansgaII_validation_results.csv
+│       ├── initialization_comparison_results.csv
+│       ├── validation_report.json
+│       └── corridor_network_data.csv
 │
 ├── scripts/                                     # Execution scripts
-│   ├── Statistical Analysis.py
+│   ├── COMPREHENSIVE BENCHMARK ANALYSIS.py
 │   ├── Initialization Validation.py
 │   ├── PA-NSGA-II vs Baseline.py
-│   ├── COMPREHENSIVE BENCHMARK ANALYSIS.py
-│   └── Case study LC-CTRP ANALYSIS.py
+│   ├── Case study LC-CTRP ANALYSIS.py
+│   └── Statistical Analysis.py
 │
 ├── results/
-│   ├── figures/                                 # Generated figures
-│   │   ├── init_size_performance.png
-│   │   ├── init_boxplot.png
-│   │   ├── init_radar.png
-│   │   ├── carbon_sensitivity.png
-│   │   ├── seasonal_sensitivity.png
-│   │   ├── corridor_map.png
-│   │   └── convergence_plots/
+│   ├── plots/                                   # Generated figures
+│   │   ├── variance_analysis.pdf
+│   │   ├── success_rate.pdf
+│   │   ├── ablation_study.pdf
+│   │   ├── Fig1_Baseline_Performance.pdf
+│   │   ├── Fig2_Carbon_Tax_Sensitivity.pdf
+│   │   ├── Fig3_Seasonal_Sensitivity.pdf
+│   │   ├── Fig4_Algorithm_Ranking.pdf
+│   │   ├── Fig5_Improvement_Chart.pdf
+│   │   ├── Fig6_Summary_Dashboard.pdf
+│   │   ├── Fig7_Statistical_Significance.pdf
+│   │   ├── Fig8_Convergence_Comparison.pdf
+│   │   ├── Fig9_Cost_Emissions_Tradeoff.pdf
+│   │   ├── Fig10_Cost_Time_Tradeoff.pdf
+│   │   ├── Fig11_Emissions_Time_Tradeoff.pdf
+│   │   ├── Fig12_Pareto_Front_Comparison.pdf
+│   │   └── Fig13_3D_Objective_Space.pdf
 │   │
-│   └── tables/                                  # Summary tables
-│       ├── complete_benchmark_results.csv
-│       ├── complete_summary_results.csv
-│       ├── statistical_significance.csv
-│       ├── path_selection_results.csv
-│       └── lc_ctrp_complete_results.json
+│   ├── statistics/                              # Statistical outputs
+│   │   └── validation_report.json
+│   │
+│   ├── pareto_fronts/                           # Pareto front data
+│   │
+│   ├── runs_data/                               # Per-run data
+│   │
+│   └── ablation/                                # Ablation study results
 │
 └── docs/                                        # Documentation
     ├── supplementary_material.pdf
     └── data_documentation.md
 ```
-
----
-
-## Figures
-
-All figures are generated in `results/figures/` and organized by analysis type.
-
-### 1. Initialization Validation Figures
-
-| Figure | Description |
-|--------|-------------|
-| `init_size_performance.png` | Performance stratified by instance size (37%→57% advantage) |
-| `init_boxplot.png` | Distribution of best emissions across five methods |
-| `init_radar.png` | Multi-criteria radar chart (4 metrics) |
-
-### 2. Benchmark Analysis Figures
-
-| Figure | Description |
-|--------|-------------|
-| `hv_comparison_boxplot.png` | Hypervolume distribution across 24 Prins instances |
-| `igd_comparison_boxplot.png` | IGD distribution across 24 Prins instances |
-| `hv_statistical_significance.png` | Statistical significance of HV differences (p-values) |
-| `igd_statistical_significance.png` | Statistical significance of IGD differences (p-values) |
-
-### 3. Case Study Figures
-
-| Figure | Description |
-|--------|-------------|
-| `corridor_map.png` | East African transport network map (19 nodes, 34 arcs) |
-| `carbon_sensitivity.png` | Emissions performance across carbon prices ($0–150/ton) |
-| `seasonal_sensitivity.png` | Performance across dry, wet, peak seasons |
-| `border_var.png` | Border crossing delay distributions (VaR/CVaR at 95%) |
-| `path_selection.png` | Algorithm path consistency across 7 price levels |
-
-### 4. Convergence Analysis Figures
-
-| Figure | Description |
-|--------|-------------|
-| `convergence_S1_8nodes.png` | Convergence for 8-node network |
-| `convergence_S2_12nodes.png` | Convergence for 12-node network |
-| `convergence_S3_15nodes.png` | Convergence for 15-node network |
-| `convergence_S4_18nodes.png` | Convergence for 18-node network |
-
-Each convergence plot includes:
-- Individual run convergence (10 runs)
-- Mean convergence with ±1σ confidence interval
-- Success rate evolution (≤1% optimality gap)
-- Final cost distribution histogram
 
 ---
 
@@ -220,13 +193,13 @@ pip install -r requirements.txt
 ### 3. Run analyses
 
 ```bash
-# Comprehensive benchmark (24 Prins instances)
+# Comprehensive benchmark (24 Prins instances, 50 runs per algorithm)
 python "scripts/COMPREHENSIVE BENCHMARK ANALYSIS.py"
 
 # Initialization validation (Adaptive-PPO vs 4 baselines)
 python "scripts/Initialization Validation.py"
 
-# PA-NSGA-II vs NSGA-II/SPEA2
+# PA-NSGA-II vs NSGA-II/SPEA2/NSGA-III
 python "scripts/PA-NSGA-II vs Baseline.py"
 
 # LC-CTRP case study with carbon price sensitivity (7 levels)
@@ -259,7 +232,7 @@ networkx>=2.6.0
 | Kenya Ministry of Transport | Rail emissions | https://www.transport.go.ke |
 | Tanzania Ports Authority | Lake ports cargo | https://www.ports.go.tz |
 | Kenya Ports Authority | Cargo volumes | https://www.kpa.co.ke |
-| Prins Benchmarks | VRP instances (24 instances, 20–200 customers) | Augerat et al. (1995), Christofides et al. (1969) |
+| Prins Benchmarks | VRP instances (24 instances, 20–200 customers) | Prins et al. (2007) |
 
 ---
 
@@ -267,9 +240,9 @@ networkx>=2.6.0
 
 ```bibtex
 @article{Ndikuriyo2026,
-  title = {Multi-Objective Optimization of Low-Carbon Container Routing Using Parameter-Adaptive NSGA-II},
+  title = {A Parameter-Adaptive Multi-Objective Evolutionary Algorithm for Low-Carbon Container Routing under Uncertainty},
   author = {Ndikuriyo, Yves and Zhang, Yinggui and Fom, Dung Davou},
-  journal = {Transportation Research Part D: Transport and Environment},
+  journal = {Simulation Modelling Practice and Theory},
   year = {2026},
   note = {Under review}
 }
@@ -290,9 +263,13 @@ PhD Candidate, Central South University, Changsha, China
 📧 yvesndikuriyo@csu.edu.cn  
 🔗 [ORCID: 0009-0006-9324-7265](https://orcid.org/0009-0006-9324-7265)
 
-**Professor Yinggui Zhang**  
+**Professor Yinggui Zhang** (Corresponding Author)  
 📧 ygzhang@csu.edu.cn  
 🔗 [ORCID: 0000-0002-5790-0638](https://orcid.org/0000-0002-5790-0638)
+
+**Dung Davou Fom**  
+📧 dungfom1@csu.edu.cn  
+🔗 [ORCID: 0009-0001-8688-813X](https://orcid.org/0009-0001-8688-813X)
 
 ---
 
@@ -307,7 +284,5 @@ PhD Candidate, Central South University, Changsha, China
 ---
 
 <div align="center">
-  <sub>Built with Python • Analysis for Transportation Research Part D • Last updated: June 2026</sub>
+  <sub>Built with Python • Analysis for Simulation Modelling Practice and Theory • Last updated: June 2026</sub>
 </div>
-l | Transportation Research Part D |
-| Benchmark count | 24 Prins instances (explicitly stated) |
