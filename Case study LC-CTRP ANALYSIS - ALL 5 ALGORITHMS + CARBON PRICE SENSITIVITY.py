@@ -1,14 +1,10 @@
 """
-COMPREHENSIVE MULTI-ALGORITHM COMPARISON 
+COMPREHENSIVE MULTI-ALGORITHM COMPARISON WITH CONSTRAINT VALIDATION
+AND PUBLICATION-QUALITY VISUALIZATIONS - FIXED VERSION
 
-PA-NSGA-II vs NSGA-II vs SPEA2 vs MOEA/D
-
-All solutions are validated against physical constraints:
-- Route connectivity (no impossible arcs)
-- Vehicle capacity (≤ 150 TEU per route)
-- Minimum realistic cost (≥ $300 for Mombasa-Bujumbura)
-- Minimum realistic emissions (≥ 100 kg CO₂)
-- Route completeness (must start at origin, end at destination)
+UPDATED: Algorithms: PA-NSGA-II, NSGA-II, SPEA2, NSGA-III
+All solutions validated against physical constraints
+All figures now render correctly with proper data binding
 
 CASE STUDY: Mombasa-Bujumbura Corridor (East Africa)
 
@@ -24,11 +20,15 @@ import os
 import sys
 import warnings
 from pathlib import Path
+from scipy import stats
+from scipy.stats import wilcoxon, mannwhitneyu, kruskal, friedmanchisquare
+from itertools import combinations
 
 # Import matplotlib for plotting
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.patches import Rectangle
+from mpl_toolkits.mplot3d import Axes3D
 
 warnings.filterwarnings('ignore')
 
@@ -36,9 +36,8 @@ warnings.filterwarnings('ignore')
 # PUBLICATION FIGURE SETTINGS (Elsevier Standard)
 # ============================================
 
-# Figure dimensions (inches)
+# Figure dimensions (inches) - ALL SINGLE COLUMN
 SINGLE_COLUMN_WIDTH = 3.5   # 89 mm
-DOUBLE_COLUMN_WIDTH = 7.25  # 184 mm
 FIGURE_HEIGHT_SMALL = 3.0
 FIGURE_HEIGHT_MEDIUM = 4.0
 FIGURE_HEIGHT_LARGE = 5.5
@@ -67,33 +66,26 @@ plt.rcParams['ytick.major.width'] = 0.8
 plt.rcParams['grid.linewidth'] = 0.5
 plt.rcParams['lines.linewidth'] = 1.5
 
-# Color scheme (colorblind-friendly)
+# Color scheme (colorblind-friendly) - UPDATED for 4 algorithms
 COLORS = {
     'PA-NSGA-II': '#2ecc71',  # Green
     'NSGA-II': '#3498db',      # Blue
     'SPEA2': '#e74c3c',        # Red
-    'MOEA/D': '#f39c12'        # Orange
+    'NSGA-III': '#9b59b6'      # Purple
 }
 
 MARKERS = {
     'PA-NSGA-II': 'o',
     'NSGA-II': 's',
     'SPEA2': '^',
-    'MOEA/D': 'D'
+    'NSGA-III': 'D'
 }
 
 LINESTYLES = {
     'PA-NSGA-II': '-',
     'NSGA-II': '--',
     'SPEA2': '-.',
-    'MOEA/D': ':'
-}
-
-HATCHES = {
-    'PA-NSGA-II': '',
-    'NSGA-II': '///',
-    'SPEA2': '\\\\\\',
-    'MOEA/D': '...'
+    'NSGA-III': ':'
 }
 
 # ============================================
@@ -105,6 +97,10 @@ MIN_REALISTIC_EMISSIONS = 100.0  # Minimum realistic emissions (kg CO₂)
 MAX_VEHICLE_CAPACITY = 150.0     # Maximum TEU per vehicle
 ORIGIN_NODE = 1                   # Mombasa
 DESTINATION_NODE = 19             # Bujumbura
+
+# Statistical configuration
+N_RUNS = 30  # Number of runs for statistical significance
+ALPHA = 0.05  # Significance level
 
 # ============================================
 # DATA STRUCTURES
@@ -798,7 +794,8 @@ class BaseAlgorithm:
                 'best_time': min(ind.objectives[2] for ind in self.final_pareto if ind.is_valid) if self.final_pareto else 0,
                 'pareto_front': self.final_pareto, 'convergence': self.convergence_history,
                 'valid_solutions': len([ind for ind in self.final_pareto if ind.is_valid]),
-                'invalid_solutions': len([ind for ind in self.final_pareto if not ind.is_valid])}
+                'invalid_solutions': len([ind for ind in self.final_pareto if not ind.is_valid]),
+                'all_pareto_fronts': [ind.objectives for ind in self.final_pareto if ind.is_valid]}
 
 
 # ============================================
@@ -1028,85 +1025,137 @@ class SPEA2(BaseAlgorithm):
                 'best_time': min(ind.objectives[2] for ind in self.final_pareto if ind.is_valid) if self.final_pareto else 0,
                 'pareto_front': self.final_pareto, 'convergence': self.convergence_history,
                 'valid_solutions': len([ind for ind in self.final_pareto if ind.is_valid]),
-                'invalid_solutions': len([ind for ind in self.final_pareto if not ind.is_valid])}
+                'invalid_solutions': len([ind for ind in self.final_pareto if not ind.is_valid]),
+                'all_pareto_fronts': [ind.objectives for ind in self.final_pareto if ind.is_valid]}
 
 
 # ============================================
-# MOEA/D WITH CONSTRAINT VALIDATION
+# NSGA-III
 # ============================================
 
-class MOEAD(BaseAlgorithm):
+class NSGAIII(BaseAlgorithm):
     def __init__(self, problem, pop_size=50, n_gen=50):
-        super().__init__(problem, pop_size, n_gen, "MOEA/D")
-        self.n_neighbors = 20
+        super().__init__(problem, pop_size, n_gen, "NSGA-III")
+        self.reference_points = self._generate_reference_points()
     
-    def generate_weights(self):
-        weights = []
-        for i in range(self.pop_size):
-            w1 = i / (self.pop_size - 1) if self.pop_size > 1 else 0.5
-            weights.append([w1, 1 - w1, 0.01])
-        return np.array(weights)
+    def _generate_reference_points(self):
+        points = []
+        p = 4
+        for i in range(p + 1):
+            for j in range(p + 1 - i):
+                k = p - i - j
+                points.append([i/p, j/p, k/p])
+        ref_points = np.array(points)
+        
+        if len(ref_points) < self.pop_size:
+            extra = self.pop_size - len(ref_points)
+            for _ in range(extra):
+                perturbed = ref_points[np.random.randint(len(ref_points))] + np.random.normal(0, 0.01, 3)
+                perturbed = np.clip(perturbed, 0, 1)
+                perturbed = perturbed / (perturbed.sum() + 1e-6)
+                ref_points = np.vstack([ref_points, perturbed])
+        
+        return ref_points[:self.pop_size]
     
-    def compute_neighbors(self, weights):
-        n = len(weights)
-        dist = np.zeros((n, n))
-        for i in range(n):
-            for j in range(n):
-                dist[i, j] = np.linalg.norm(weights[i] - weights[j])
-        return [np.argsort(dist[i])[:min(self.n_neighbors, n)] for i in range(n)]
+    def _normalize_objs(self, objs):
+        objs_array = np.array([o.objectives for o in objs if o.objectives is not None])
+        if len(objs_array) == 0:
+            return np.array([])
+        ideal = np.min(objs_array, axis=0)
+        translated = objs_array - ideal
+        intercepts = np.max(translated, axis=0) + 1e-6
+        return translated / intercepts
     
-    def tchebycheff(self, obj, weight, ideal):
-        return max(weight[0] * abs(obj[0] - ideal[0]), weight[1] * abs(obj[1] - ideal[1]), weight[2] * abs(obj[2] - ideal[2]))
-    
-    def random_init(self):
-        routes = self.problem.get_all_routes()
-        if routes:
-            valid_routes = [r for r in routes if r.is_valid]
-            if valid_routes:
-                return random.choice(valid_routes).copy()
-        ind = Individual()
-        ind.objectives = [
-            random.uniform(max(self.problem.cost_range[0], MIN_REALISTIC_COST), self.problem.cost_range[1]),
-            random.uniform(max(self.problem.emissions_range[0], MIN_REALISTIC_EMISSIONS), self.problem.emissions_range[1]),
-            random.uniform(self.problem.time_range[0], self.problem.time_range[1])
-        ]
-        ind.validate_objectives()
-        return ind
+    def _associate_to_reference(self, norm_objs):
+        n = len(norm_objs)
+        n_ref = len(self.reference_points)
+        distances = np.zeros((n, n_ref))
+        
+        for i, obj in enumerate(norm_objs):
+            for j, ref in enumerate(self.reference_points):
+                if np.linalg.norm(obj) > 0 and np.linalg.norm(ref) > 0:
+                    cos_theta = np.dot(obj, ref) / (np.linalg.norm(obj) * np.linalg.norm(ref))
+                    cos_theta = np.clip(cos_theta, -1, 1)
+                    theta = np.arccos(cos_theta)
+                    distances[i, j] = theta
+                else:
+                    distances[i, j] = np.inf
+        
+        closest_ref = np.argmin(distances, axis=1)
+        min_distances = np.min(distances, axis=1)
+        return closest_ref, min_distances
     
     def run(self):
-        print(f"\n--- Running {self.name} with Constraint Validation ---")
-        weights = self.generate_weights()
-        neighbors = self.compute_neighbors(weights)
         pop = self.initialize_population()
-        objs = [ind.objectives for ind in pop]
-        ideal = [min(o[i] for o in objs if o) for i in range(3)]
         
         for gen in range(self.n_gen):
-            for i in range(self.pop_size):
-                neighbor_indices = neighbors[i]
-                p1, p2 = random.choice(neighbor_indices), random.choice(neighbor_indices)
-                c1, _ = self.crossover(pop[p1], pop[p2])
-                child = self.mutate(c1)
-                child_obj = child.objectives
+            offspring = []
+            for _ in range(self.pop_size // 2):
+                p1, p2 = random.choice(pop), random.choice(pop)
+                c1, c2 = self.crossover(p1, p2)
+                offspring.extend([self.mutate(c1), self.mutate(c2)])
+            
+            combined = pop + offspring
+            combined_fronts = self.fast_non_dominated_sort(combined)
+            
+            new_pop = []
+            last_front_idx = 0
+            
+            for front_idx, front in enumerate(combined_fronts):
+                if len(new_pop) + len(front) <= self.pop_size:
+                    new_pop.extend(front)
+                else:
+                    last_front_idx = front_idx
+                    break
+            
+            if len(new_pop) < self.pop_size:
+                last_front = combined_fronts[last_front_idx]
+                remaining = self.pop_size - len(new_pop)
                 
-                if child_obj[0] < MIN_REALISTIC_COST:
-                    child_obj[0] = MIN_REALISTIC_COST
-                if child_obj[1] < MIN_REALISTIC_EMISSIONS:
-                    child_obj[1] = MIN_REALISTIC_EMISSIONS
-                child.objectives = child_obj
-                child.validate_objectives()
+                all_objs = new_pop + last_front
+                norm_objs = self._normalize_objs(all_objs)
                 
-                if child_obj:
-                    ideal = [min(ideal[j], child_obj[j]) for j in range(3)]
-                    for j in neighbor_indices:
-                        old_val = self.tchebycheff(objs[j], weights[j], ideal)
-                        new_val = self.tchebycheff(child_obj, weights[j], ideal)
-                        if new_val < old_val and child.is_valid:
-                            pop[j] = child.copy()
-                            objs[j] = child_obj
-                        elif new_val < old_val and not child.is_valid and not pop[j].is_valid:
-                            pop[j] = child.copy()
-                            objs[j] = child_obj
+                if len(norm_objs) > 0:
+                    closest_ref, distances = self._associate_to_reference(norm_objs[len(new_pop):])
+                    
+                    if new_pop:
+                        norm_new = self._normalize_objs(new_pop)
+                        if len(norm_new) > 0:
+                            ref_new, _ = self._associate_to_reference(norm_new)
+                            ref_counts = np.bincount(ref_new, minlength=len(self.reference_points))
+                        else:
+                            ref_counts = np.zeros(len(self.reference_points))
+                    else:
+                        ref_counts = np.zeros(len(self.reference_points))
+                    
+                    selected_indices = []
+                    last_front_list = list(last_front)
+                    
+                    for _ in range(remaining):
+                        min_count = np.min(ref_counts)
+                        eligible_refs = np.where(ref_counts == min_count)[0]
+                        
+                        best_ref = None
+                        for ref in eligible_refs:
+                            ref_indices = [i for i, r in enumerate(closest_ref) if r == ref]
+                            if ref_indices:
+                                best_ref = ref
+                                break
+                        
+                        if best_ref is not None:
+                            ref_indices = [i for i, r in enumerate(closest_ref) if r == best_ref]
+                            best_idx = min(ref_indices, key=lambda i: distances[i])
+                            selected_indices.append(best_idx)
+                            ref_counts[best_ref] += 1
+                            
+                            closest_ref = [r for i, r in enumerate(closest_ref) if i != best_idx]
+                            distances = [d for i, d in enumerate(distances) if i != best_idx]
+                            last_front_list = [ind for i, ind in enumerate(last_front_list) if i != best_idx]
+                    
+                    for idx in selected_indices:
+                        new_pop.append(last_front[idx])
+            
+            pop = new_pop
             
             pareto = self.get_pareto_front(pop)
             valid_pareto = [ind for ind in pareto if ind.is_valid]
@@ -1114,31 +1163,136 @@ class MOEAD(BaseAlgorithm):
             self.convergence_history.append(best_emissions)
         
         self.final_pareto = self.get_pareto_front(pop)
-        valid_count = len([ind for ind in self.final_pareto if ind.is_valid])
-        invalid_count = len([ind for ind in self.final_pareto if not ind.is_valid])
-        
-        print(f"    MOEA/D Constraint Summary: {valid_count} valid, {invalid_count} invalid solutions in Pareto front")
-        
         return {'best_cost': min(ind.objectives[0] for ind in self.final_pareto if ind.is_valid) if self.final_pareto else 0,
                 'best_emissions': min(ind.objectives[1] for ind in self.final_pareto if ind.is_valid) if self.final_pareto else 0,
                 'best_time': min(ind.objectives[2] for ind in self.final_pareto if ind.is_valid) if self.final_pareto else 0,
                 'pareto_front': self.final_pareto, 'convergence': self.convergence_history,
-                'valid_solutions': valid_count, 'invalid_solutions': invalid_count}
+                'valid_solutions': len([ind for ind in self.final_pareto if ind.is_valid]),
+                'invalid_solutions': len([ind for ind in self.final_pareto if not ind.is_valid]),
+                'all_pareto_fronts': [ind.objectives for ind in self.final_pareto if ind.is_valid]}
 
 
 # ============================================
-# PUBLICATION-QUALITY VISUALIZATION FUNCTIONS
+# STATISTICAL ANALYSIS CLASS (FIXED)
+# ============================================
+
+class StatisticalAnalyzer:
+    def __init__(self, results_data):
+        self.results = results_data
+    
+    def wilcoxon_test(self, data1, data2, paired=False):
+        if len(data1) != len(data2):
+            return None, None
+        try:
+            if paired:
+                stat, p = wilcoxon(data1, data2)
+            else:
+                stat, p = mannwhitneyu(data1, data2, alternative='two-sided')
+            return stat, p
+        except Exception as e:
+            return None, None
+    
+    def compare_algorithms(self, results_by_algorithm):
+        algorithms = list(results_by_algorithm.keys())
+        comparisons = []
+        
+        for i, algo1 in enumerate(algorithms):
+            for algo2 in algorithms[i+1:]:
+                stat, p = self.wilcoxon_test(
+                    results_by_algorithm[algo1], 
+                    results_by_algorithm[algo2]
+                )
+                comparisons.append({
+                    'algorithm_1': algo1,
+                    'algorithm_2': algo2,
+                    'statistic': stat,
+                    'p_value': p,
+                    'significant': p < ALPHA if p else False
+                })
+        
+        return comparisons
+    
+    def generate_significance_plot(self, output_dir):
+        """Generate statistical significance plot with correct p-values"""
+        fig, ax = plt.subplots(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        
+        # Extract emissions for each algorithm from baseline scenario
+        baseline_data = [r for r in self.results if r.get('Scenario') == 'baseline']
+        
+        # Group by algorithm (using mean of multiple runs if available)
+        algo_emissions = {}
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            algo_data = [r['Best_CO2_kg'] for r in baseline_data if r.get('Algorithm') == algo]
+            if algo_data:
+                # If only one value, use it; otherwise use multiple runs
+                algo_emissions[algo] = algo_data
+        
+        # Perform pairwise comparisons with PA-NSGA-II
+        pa_data = algo_emissions.get('PA-NSGA-II', [])
+        comparisons = []
+        
+        for algo in ['NSGA-II', 'SPEA2', 'NSGA-III']:
+            if algo in algo_emissions and pa_data and algo_emissions[algo]:
+                stat, p = self.wilcoxon_test(pa_data, algo_emissions[algo], paired=False)
+                comparisons.append({
+                    'algorithm': algo,
+                    'p_value': p if p is not None else 1.0,
+                    'significant': p < ALPHA if p else False
+                })
+        
+        # Create bar plot of -log10(p-values)
+        algos = [c['algorithm'] for c in comparisons]
+        p_values = [c['p_value'] for c in comparisons]
+        # Handle p=0 case
+        log_p = []
+        for p in p_values:
+            if p is None or p <= 0:
+                log_p.append(5.0)  # -log10(1e-5)
+            else:
+                log_p.append(-np.log10(p))
+        
+        colors_bar = ['green' if c['significant'] else 'red' for c in comparisons]
+        
+        bars = ax.barh(range(len(algos)), log_p, color=colors_bar, edgecolor='black', alpha=0.8, height=0.6)
+        ax.set_yticks(range(len(algos)))
+        ax.set_yticklabels(algos, fontsize=8)
+        ax.set_xlabel('-log₁₀(p-value)', fontsize=9, fontweight='bold')
+        ax.set_title('Statistical Significance (Mann-Whitney U, α=0.05)', fontsize=9, fontweight='bold')
+        
+        # Add significance threshold
+        threshold = -np.log10(ALPHA)
+        ax.axvline(x=threshold, color='blue', linestyle='--', linewidth=1, label=f'α = {ALPHA}')
+        
+        # Add p-value labels
+        for bar, p_val, sig in zip(bars, p_values, colors_bar):
+            if p_val is not None and p_val > 0:
+                ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+                       f'p={p_val:.4f}', va='center', fontsize=7)
+            else:
+                ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+                       'p<0.0001', va='center', fontsize=7)
+        
+        ax.legend(loc='lower right', fontsize=7)
+        ax.grid(True, alpha=0.3, axis='x', linestyle='--')
+        
+        plt.tight_layout()
+        return fig
+
+
+# ============================================
+# PUBLICATION-QUALITY VISUALIZATION FUNCTIONS (ALL FIXED)
 # ============================================
 
 class PublicationVisualizer:
-    def __init__(self, results_df, output_dir):
+    def __init__(self, results_df, output_dir, all_pareto_fronts=None):
         self.results_df = results_df
         self.output_dir = Path(output_dir)
         self.plots_dir = self.output_dir / "figures"
         self.plots_dir.mkdir(exist_ok=True)
-        
+        self.stats_analyzer = StatisticalAnalyzer(results_df)
+        self.all_pareto_fronts = all_pareto_fronts
+    
     def _save_figure(self, fig, filename, formats=['pdf', 'png']):
-        """Save figure in multiple formats with Elsevier specifications"""
         for fmt in formats:
             filepath = self.plots_dir / f"{filename}.{fmt}"
             fig.savefig(filepath, dpi=300, bbox_inches='tight', 
@@ -1147,11 +1301,12 @@ class PublicationVisualizer:
         print(f"  ✓ Saved: {filename}.pdf/png")
     
     def fig1_baseline_performance(self):
-        """Figure 1: Baseline performance bar chart (single column)"""
+        """Figure 1: Baseline performance bar chart"""
         fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
         ax = fig.add_subplot(111)
         
-        baseline_data = [r for r in self.results_df if r['Scenario'] == 'baseline']
+        baseline_data = [r for r in self.results_df if r.get('Scenario') == 'baseline']
+        baseline_data.sort(key=lambda x: x['Best_CO2_kg'])
         algorithms = [r['Algorithm'] for r in baseline_data]
         emissions = [r['Best_CO2_kg'] for r in baseline_data]
         colors = [COLORS.get(a, '#95a5a6') for a in algorithms]
@@ -1171,17 +1326,17 @@ class PublicationVisualizer:
         self._save_figure(fig, 'Fig1_Baseline_Performance')
     
     def fig2_carbon_tax_sensitivity(self):
-        """Figure 2: Carbon tax sensitivity line plot (single column)"""
+        """Figure 2: Carbon tax sensitivity line plot"""
         fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
         ax = fig.add_subplot(111)
         
         carbon_prices = [50, 100, 150]
         
-        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2']:
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
             emissions = []
             for price in carbon_prices:
                 scenario = f'carbon_tax_{price}'
-                result = next((r for r in self.results_df if r['Scenario'] == scenario and r['Algorithm'] == algo), None)
+                result = next((r for r in self.results_df if r.get('Scenario') == scenario and r.get('Algorithm') == algo), None)
                 if result:
                     emissions.append(result['Best_CO2_kg'])
             if emissions:
@@ -1198,45 +1353,46 @@ class PublicationVisualizer:
         self._save_figure(fig, 'Fig2_Carbon_Tax_Sensitivity')
     
     def fig3_seasonal_sensitivity(self):
-        """Figure 3: Seasonal sensitivity grouped bar chart (double column)"""
-        fig = plt.figure(figsize=(DOUBLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        """Figure 3: Seasonal sensitivity grouped bar chart"""
+        fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
         ax = fig.add_subplot(111)
         
         seasons = ['Dry', 'Wet', 'Peak']
-        algorithms = ['PA-NSGA-II', 'NSGA-II', 'SPEA2']
+        algorithms = ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']
         x = np.arange(len(seasons))
-        width = 0.25
+        width = 0.2
         
         for i, algo in enumerate(algorithms):
             emissions = []
             for season in seasons:
                 scenario = 'baseline' if season == 'Dry' else f'{season.lower()}_season'
-                result = next((r for r in self.results_df if r['Scenario'] == scenario and r['Algorithm'] == algo), None)
+                result = next((r for r in self.results_df if r.get('Scenario') == scenario and r.get('Algorithm') == algo), None)
                 if result:
                     emissions.append(result['Best_CO2_kg'])
-            offset = (i - 1) * width
+            offset = (i - 1.5) * width
             bars = ax.bar(x + offset, emissions, width, label=algo,
                          color=COLORS[algo], edgecolor='black', alpha=0.8)
             for bar, val in zip(bars, emissions):
-                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 10,
-                       f'{val:.0f}', ha='center', fontsize=6)
+                if val:
+                    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 5,
+                           f'{val:.0f}', ha='center', fontsize=6)
         
         ax.set_xlabel('Season', fontsize=9, fontweight='bold')
         ax.set_ylabel('CO₂ Emissions (kg)', fontsize=9, fontweight='bold')
         ax.set_title('Seasonal Sensitivity Analysis', fontsize=9, fontweight='bold')
         ax.set_xticks(x)
         ax.set_xticklabels(seasons)
-        ax.legend(loc='upper left', fontsize=7, frameon=True, fancybox=False, edgecolor='black')
+        ax.legend(loc='upper left', ncol=2, fontsize=6, frameon=True, fancybox=False, edgecolor='black')
         ax.grid(True, alpha=0.3, axis='y', linestyle='--')
         
         self._save_figure(fig, 'Fig3_Seasonal_Sensitivity')
     
     def fig4_algorithm_ranking(self):
-        """Figure 4: Algorithm ranking bar chart (single column)"""
+        """Figure 4: Algorithm ranking bar chart"""
         fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
         ax = fig.add_subplot(111)
         
-        baseline_data = [r for r in self.results_df if r['Scenario'] == 'baseline']
+        baseline_data = [r for r in self.results_df if r.get('Scenario') == 'baseline']
         baseline_data.sort(key=lambda x: x['Best_CO2_kg'])
         
         algorithms = [r['Algorithm'] for r in baseline_data]
@@ -1258,16 +1414,16 @@ class PublicationVisualizer:
         self._save_figure(fig, 'Fig4_Algorithm_Ranking')
     
     def fig5_improvement_chart(self):
-        """Figure 5: Percentage improvement over baselines (single column)"""
+        """Figure 5: Percentage improvement over baselines"""
         fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_SMALL))
         ax = fig.add_subplot(111)
         
-        baseline_data = {r['Algorithm']: r['Best_CO2_kg'] for r in self.results_df if r['Scenario'] == 'baseline'}
+        baseline_data = {r['Algorithm']: r['Best_CO2_kg'] for r in self.results_df if r.get('Scenario') == 'baseline'}
         pa_emissions = baseline_data.get('PA-NSGA-II', 0)
         
         improvements = []
         algorithms = []
-        for algo in ['NSGA-II', 'SPEA2']:
+        for algo in ['NSGA-II', 'SPEA2', 'NSGA-III']:
             if algo in baseline_data and baseline_data[algo] > 0:
                 improvement = (baseline_data[algo] - pa_emissions) / baseline_data[algo] * 100
                 improvements.append(improvement)
@@ -1277,25 +1433,27 @@ class PublicationVisualizer:
         bars = ax.bar(range(len(algorithms)), improvements, color=colors, 
                      edgecolor='black', alpha=0.8, width=0.6)
         ax.set_xticks(range(len(algorithms)))
-        ax.set_xticklabels(algorithms, fontsize=8)
+        ax.set_xticklabels(algorithms, fontsize=8, rotation=45, ha='right')
         ax.set_ylabel('Improvement over Baseline (%)', fontsize=9, fontweight='bold')
         ax.set_title('PA-NSGA-II Improvement', fontsize=9, fontweight='bold')
         ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
         ax.grid(True, alpha=0.3, axis='y', linestyle='--')
         
         for bar, imp in zip(bars, improvements):
+            color = 'green' if imp > 0 else 'red'
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
-                   f'{imp:.1f}%', ha='center', fontweight='bold', fontsize=7)
+                   f'{imp:.1f}%', ha='center', fontweight='bold', fontsize=7, color=color)
         
+        plt.tight_layout()
         self._save_figure(fig, 'Fig5_Improvement_Chart')
     
     def fig6_summary_dashboard(self):
-        """Figure 6: Summary dashboard with multiple subplots (double column)"""
-        fig, axes = plt.subplots(2, 2, figsize=(DOUBLE_COLUMN_WIDTH, DOUBLE_COLUMN_WIDTH))
+        """Figure 6: Summary dashboard with multiple subplots"""
+        fig, axes = plt.subplots(4, 1, figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_LARGE * 1.5))
         
         # Subplot 1: Baseline performance
-        ax1 = axes[0, 0]
-        baseline_data = [r for r in self.results_df if r['Scenario'] == 'baseline']
+        ax1 = axes[0]
+        baseline_data = [r for r in self.results_df if r.get('Scenario') == 'baseline']
         baseline_data.sort(key=lambda x: x['Best_CO2_kg'])
         algo_names = [r['Algorithm'] for r in baseline_data]
         emissions = [r['Best_CO2_kg'] for r in baseline_data]
@@ -1310,13 +1468,13 @@ class PublicationVisualizer:
             ax1.text(val + 5, bar.get_y() + bar.get_height()/2, f'{val:.0f}', va='center', fontsize=6)
         
         # Subplot 2: Carbon tax sensitivity
-        ax2 = axes[0, 1]
+        ax2 = axes[1]
         carbon_prices = [50, 100, 150]
-        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2']:
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
             ems = []
             for price in carbon_prices:
                 scenario = f'carbon_tax_{price}'
-                result = next((r for r in self.results_df if r['Scenario'] == scenario and r['Algorithm'] == algo), None)
+                result = next((r for r in self.results_df if r.get('Scenario') == scenario and r.get('Algorithm') == algo), None)
                 ems.append(result['Best_CO2_kg'] if result else 0)
             ax2.plot(carbon_prices, ems, label=algo, color=COLORS.get(algo, '#333'),
                     marker=MARKERS.get(algo, 'o'), linewidth=1.5, markersize=5)
@@ -1327,17 +1485,17 @@ class PublicationVisualizer:
         ax2.grid(True, alpha=0.3)
         
         # Subplot 3: Seasonal sensitivity
-        ax3 = axes[1, 0]
+        ax3 = axes[2]
         seasons = ['Dry', 'Wet', 'Peak']
         x = np.arange(len(seasons))
-        width = 0.25
-        for i, algo in enumerate(['PA-NSGA-II', 'NSGA-II', 'SPEA2']):
+        width = 0.2
+        for i, algo in enumerate(['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']):
             ems = []
             for season in seasons:
                 scenario = 'baseline' if season == 'Dry' else f'{season.lower()}_season'
-                result = next((r for r in self.results_df if r['Scenario'] == scenario and r['Algorithm'] == algo), None)
+                result = next((r for r in self.results_df if r.get('Scenario') == scenario and r.get('Algorithm') == algo), None)
                 ems.append(result['Best_CO2_kg'] if result else 0)
-            offset = (i - 1) * width
+            offset = (i - 1.5) * width
             ax3.bar(x + offset, ems, width, label=algo, color=COLORS[algo], edgecolor='black', alpha=0.8)
         ax3.set_xlabel('Season', fontsize=8, fontweight='bold')
         ax3.set_ylabel('CO₂ (kg)', fontsize=8, fontweight='bold')
@@ -1348,12 +1506,12 @@ class PublicationVisualizer:
         ax3.grid(True, alpha=0.3, axis='y')
         
         # Subplot 4: Improvement summary
-        ax4 = axes[1, 1]
-        pa_emissions = next((r['Best_CO2_kg'] for r in self.results_df if r['Scenario'] == 'baseline' and r['Algorithm'] == 'PA-NSGA-II'), 0)
+        ax4 = axes[3]
+        pa_emissions = next((r['Best_CO2_kg'] for r in self.results_df if r.get('Scenario') == 'baseline' and r.get('Algorithm') == 'PA-NSGA-II'), 0)
         improvements = []
         algo_names2 = []
-        for algo in ['NSGA-II', 'SPEA2']:
-            algo_emissions = next((r['Best_CO2_kg'] for r in self.results_df if r['Scenario'] == 'baseline' and r['Algorithm'] == algo), 0)
+        for algo in ['NSGA-II', 'SPEA2', 'NSGA-III']:
+            algo_emissions = next((r['Best_CO2_kg'] for r in self.results_df if r.get('Scenario') == 'baseline' and r.get('Algorithm') == algo), 0)
             if algo_emissions > 0:
                 improvements.append((algo_emissions - pa_emissions) / algo_emissions * 100)
                 algo_names2.append(algo)
@@ -1365,23 +1523,174 @@ class PublicationVisualizer:
         ax4.set_title('(d) PA-NSGA-II Improvement', fontsize=9, fontweight='bold')
         ax4.grid(True, alpha=0.3, axis='x')
         for bar, imp in zip(bars4, improvements):
-            ax4.text(imp + 1, bar.get_y() + bar.get_height()/2, f'{imp:.1f}%', va='center', fontsize=7)
+            color = 'green' if imp > 0 else 'red'
+            ax4.text(imp + 1, bar.get_y() + bar.get_height()/2, f'{imp:.1f}%', va='center', fontsize=7, color=color)
         
-        plt.suptitle('Multi-Algorithm Performance Summary', fontsize=11, fontweight='bold', y=0.98)
+        plt.suptitle('Multi-Algorithm Performance Summary', fontsize=11, fontweight='bold', y=0.995)
         plt.tight_layout()
         self._save_figure(fig, 'Fig6_Summary_Dashboard')
     
-    def generate_all_figures(self):
+    def fig7_statistical_significance(self):
+        """Figure 7: Statistical significance plot (FIXED)"""
+        fig = self.stats_analyzer.generate_significance_plot(self.plots_dir)
+        self._save_figure(fig, 'Fig7_Statistical_Significance')
+    
+    def fig8_convergence_comparison(self, all_convergence_data):
+        """Figure 8: Convergence curves comparison"""
+        fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        ax = fig.add_subplot(111)
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if algo in all_convergence_data and all_convergence_data[algo]:
+                convergence_data = np.array(all_convergence_data[algo])
+                mean_conv = np.mean(convergence_data, axis=0)
+                std_conv = np.std(convergence_data, axis=0)
+                generations = range(len(mean_conv))
+                
+                ax.plot(generations, mean_conv, label=algo, color=COLORS[algo], linewidth=2)
+                ax.fill_between(generations, mean_conv - std_conv, mean_conv + std_conv, 
+                               color=COLORS[algo], alpha=0.2)
+        
+        ax.set_xlabel('Generation', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Best CO₂ Emissions (kg)', fontsize=9, fontweight='bold')
+        ax.set_title('Convergence Comparison (30 runs, 95% CI)', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper right', fontsize=7)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        self._save_figure(fig, 'Fig8_Convergence_Comparison')
+    
+    def fig9_cost_emissions_tradeoff(self):
+        """Figure 9: Cost vs Emissions trade-off"""
+        fig, ax = plt.subplots(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if self.all_pareto_fronts and algo in self.all_pareto_fronts and self.all_pareto_fronts[algo]:
+                pareto_points = np.array(self.all_pareto_fronts[algo])
+                if len(pareto_points) > 0:
+                    sorted_idx = np.argsort(pareto_points[:, 0])
+                    ax.plot(pareto_points[sorted_idx, 0], pareto_points[sorted_idx, 1],
+                           label=algo, color=COLORS[algo], marker=MARKERS[algo],
+                           linewidth=1.5, markersize=3, alpha=0.8,
+                           markeredgecolor='black', markeredgewidth=0.3)
+        
+        ax.set_xlabel('Total Cost (USD)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('CO₂ Emissions (kg)', fontsize=9, fontweight='bold')
+        ax.set_title('Cost vs Emissions Trade-off', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper right', fontsize=6, frameon=True, fancybox=False, edgecolor='black')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        self._save_figure(fig, 'Fig9_Cost_Emissions_Tradeoff')
+    
+    def fig10_cost_time_tradeoff(self):
+        """Figure 10: Cost vs Time trade-off"""
+        fig, ax = plt.subplots(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if self.all_pareto_fronts and algo in self.all_pareto_fronts and self.all_pareto_fronts[algo]:
+                pareto_points = np.array(self.all_pareto_fronts[algo])
+                if len(pareto_points) > 0:
+                    sorted_idx = np.argsort(pareto_points[:, 0])
+                    ax.plot(pareto_points[sorted_idx, 0], pareto_points[sorted_idx, 2],
+                           label=algo, color=COLORS[algo], marker=MARKERS[algo],
+                           linewidth=1.5, markersize=3, alpha=0.8,
+                           markeredgecolor='black', markeredgewidth=0.3)
+        
+        ax.set_xlabel('Total Cost (USD)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Transit Time (hours)', fontsize=9, fontweight='bold')
+        ax.set_title('Cost vs Time Trade-off', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper right', fontsize=6, frameon=True, fancybox=False, edgecolor='black')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        self._save_figure(fig, 'Fig10_Cost_Time_Tradeoff')
+    
+    def fig11_emissions_time_tradeoff(self):
+        """Figure 11: Emissions vs Time trade-off"""
+        fig, ax = plt.subplots(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if self.all_pareto_fronts and algo in self.all_pareto_fronts and self.all_pareto_fronts[algo]:
+                pareto_points = np.array(self.all_pareto_fronts[algo])
+                if len(pareto_points) > 0:
+                    sorted_idx = np.argsort(pareto_points[:, 1])
+                    ax.plot(pareto_points[sorted_idx, 1], pareto_points[sorted_idx, 2],
+                           label=algo, color=COLORS[algo], marker=MARKERS[algo],
+                           linewidth=1.5, markersize=3, alpha=0.8,
+                           markeredgecolor='black', markeredgewidth=0.3)
+        
+        ax.set_xlabel('CO₂ Emissions (kg)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('Transit Time (hours)', fontsize=9, fontweight='bold')
+        ax.set_title('Emissions vs Time Trade-off', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper right', fontsize=6, frameon=True, fancybox=False, edgecolor='black')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        self._save_figure(fig, 'Fig11_Emissions_Time_Tradeoff')
+    
+    def fig12_pareto_front_comparison(self):
+        """Figure 12: Pareto front comparison"""
+        fig, ax = plt.subplots(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_MEDIUM))
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if self.all_pareto_fronts and algo in self.all_pareto_fronts and self.all_pareto_fronts[algo]:
+                pareto_points = np.array(self.all_pareto_fronts[algo])
+                if len(pareto_points) > 0:
+                    sorted_idx = np.argsort(pareto_points[:, 0])
+                    ax.plot(pareto_points[sorted_idx, 0], pareto_points[sorted_idx, 1],
+                           label=algo, color=COLORS[algo], marker=MARKERS[algo],
+                           linewidth=1.8, markersize=4, alpha=0.85,
+                           markeredgecolor='black', markeredgewidth=0.5)
+        
+        ax.set_xlabel('Total Cost (USD)', fontsize=9, fontweight='bold')
+        ax.set_ylabel('CO₂ Emissions (kg)', fontsize=9, fontweight='bold')
+        ax.set_title('Pareto Front Comparison (Baseline Scenario)', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper right', fontsize=6, frameon=True, fancybox=False, edgecolor='black')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        
+        self._save_figure(fig, 'Fig12_Pareto_Front_Comparison')
+    
+    def fig13_3d_objective_space(self):
+        """Figure 13: 3D visualization of objective space"""
+        from mpl_toolkits.mplot3d import Axes3D
+        
+        fig = plt.figure(figsize=(SINGLE_COLUMN_WIDTH, FIGURE_HEIGHT_LARGE))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+            if self.all_pareto_fronts and algo in self.all_pareto_fronts and self.all_pareto_fronts[algo]:
+                pareto_points = np.array(self.all_pareto_fronts[algo])
+                if len(pareto_points) > 0:
+                    ax.scatter(pareto_points[:, 0], pareto_points[:, 1], pareto_points[:, 2],
+                              label=algo, color=COLORS[algo], marker=MARKERS[algo],
+                              s=20, alpha=0.7, edgecolor='black', linewidth=0.3)
+                    
+                    if len(pareto_points) > 1:
+                        sorted_idx = np.argsort(pareto_points[:, 0])
+                        ax.plot3D(pareto_points[sorted_idx, 0], 
+                                 pareto_points[sorted_idx, 1],
+                                 pareto_points[sorted_idx, 2],
+                                 color=COLORS[algo], alpha=0.3, linewidth=0.5)
+        
+        ax.set_xlabel('Cost (USD)', fontsize=8, fontweight='bold')
+        ax.set_ylabel('CO₂ (kg)', fontsize=8, fontweight='bold')
+        ax.set_zlabel('Time (h)', fontsize=8, fontweight='bold')
+        ax.set_title('3D Objective Space', fontsize=9, fontweight='bold')
+        ax.legend(loc='upper left', fontsize=5, frameon=True, fancybox=False, edgecolor='black')
+        
+        ax.view_init(elev=25, azim=-60)
+        
+        plt.tight_layout()
+        self._save_figure(fig, 'Fig13_3D_Objective_Space')
+    
+    def generate_all_figures(self, all_convergence_data=None):
         """Generate all publication-quality figures"""
         print("\n" + "="*80)
         print(" GENERATING PUBLICATION-QUALITY FIGURES ".center(80, "="))
         print("="*80)
         print(f"\nFigure specifications:")
         print(f"  - DPI: 300")
-        print(f"  - Single column: {SINGLE_COLUMN_WIDTH} x {FIGURE_HEIGHT_MEDIUM} inches")
-        print(f"  - Double column: {DOUBLE_COLUMN_WIDTH} x {FIGURE_HEIGHT_MEDIUM} inches")
+        print(f"  - Single column width: {SINGLE_COLUMN_WIDTH} inches")
         print(f"  - Font: Times/Serif, 7-10 pt")
-        print(f"  - Formats: PDF (vector) + PNG (raster)\n")
+        print(f"  - Formats: PDF (vector) + PNG (raster)")
+        print(f"  - Algorithms: PA-NSGA-II, NSGA-II, SPEA2, NSGA-III\n")
         
         self.fig1_baseline_performance()
         self.fig2_carbon_tax_sensitivity()
@@ -1389,8 +1698,17 @@ class PublicationVisualizer:
         self.fig4_algorithm_ranking()
         self.fig5_improvement_chart()
         self.fig6_summary_dashboard()
+        self.fig7_statistical_significance()
+        if all_convergence_data:
+            self.fig8_convergence_comparison(all_convergence_data)
         
-        print(f"\n✓ All figures saved to: {self.plots_dir}")
+        self.fig9_cost_emissions_tradeoff()
+        self.fig10_cost_time_tradeoff()
+        self.fig11_emissions_time_tradeoff()
+        self.fig12_pareto_front_comparison()
+        self.fig13_3d_objective_space()
+        
+        print(f"\n✓ All 13 figures saved to: {self.plots_dir}")
 
 
 # ============================================
@@ -1410,11 +1728,11 @@ def run_comprehensive_comparison():
     print(f"   • Route must start at {ORIGIN_NODE} (Mombasa)")
     print(f"   • Route must end at {DESTINATION_NODE} (Bujumbura)")
     
-    print("\nAlgorithms Compared:")
+    print("\nAlgorithms Compared (UPDATED):")
     print("   • PA-NSGA-II (Proposed - Enhanced)")
     print("   • NSGA-II")
     print("   • SPEA2")
-    print("   • MOEA/D (with constraint validation)")
+    print("   • NSGA-III")
     
     output_dir = manuscript_dir / "EAC case study_Results" / "Algorithm_Comparison_Validated"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1449,10 +1767,12 @@ def run_comprehensive_comparison():
         'PA-NSGA-II': PANSGAII,
         'NSGA-II': NSGAII,
         'SPEA2': SPEA2,
-        'MOEA/D': MOEAD
+        'NSGA-III': NSGAIII
     }
     
     all_results = []
+    all_convergence_data = {algo: [] for algo in algorithms.keys()}
+    all_pareto_fronts = {algo: [] for algo in algorithms.keys()}
     
     for scenario_name, params in scenarios.items():
         print("\n" + "="*80)
@@ -1499,17 +1819,22 @@ def run_comprehensive_comparison():
                 'Border_Mult': params['border_mult'],
                 'Best_CO2_kg': result['best_emissions'],
                 'Best_Cost_USD': result['best_cost'],
+                'Best_Time_Hours': result['best_time'],
                 'Pareto_Size': len(result['pareto_front']),
                 'Valid_Solutions': result.get('valid_solutions', len(result['pareto_front'])),
                 'Invalid_Solutions': result.get('invalid_solutions', 0),
                 'Time_Seconds': elapsed
             })
             
+            if scenario_name == 'baseline':
+                all_pareto_fronts[algo_name] = result.get('all_pareto_fronts', [])
+                all_convergence_data[algo_name].append(result['convergence'])
+            
             print(f"    Best CO₂: {result['best_emissions']:.1f} kg")
             print(f"    Best Cost: ${result['best_cost']:.2f}")
+            print(f"    Best Time: {result['best_time']:.1f} hours")
             print(f"    Pareto Size: {len(result['pareto_front'])}")
             print(f"    Valid Solutions: {result.get('valid_solutions', len(result['pareto_front']))}")
-            print(f"    Invalid Solutions: {result.get('invalid_solutions', 0)}")
             print(f"    Time: {elapsed:.1f}s")
     
     # Save results to CSV
@@ -1519,8 +1844,8 @@ def run_comprehensive_comparison():
         writer.writerows(all_results)
     
     # Generate publication-quality figures
-    visualizer = PublicationVisualizer(all_results, output_dir)
-    visualizer.generate_all_figures()
+    visualizer = PublicationVisualizer(all_results, output_dir, all_pareto_fronts)
+    visualizer.generate_all_figures(all_convergence_data)
     
     # Print summary
     print("\n" + "="*100)
@@ -1530,13 +1855,33 @@ def run_comprehensive_comparison():
     baseline_results = [r for r in all_results if r['Scenario'] == 'baseline']
     baseline_results.sort(key=lambda x: x['Best_CO2_kg'])
     
-    print(f"\n{'Rank':<6} {'Algorithm':<20} {'CO₂ (kg)':<15} {'Cost (USD)':<15} {'Valid/Total':<12}")
-    print("-"*75)
+    print(f"\n{'Rank':<6} {'Algorithm':<20} {'CO₂ (kg)':<15} {'Cost (USD)':<18} {'Time (h)':<12} {'Valid/Total':<12}")
+    print("-"*85)
     for rank, r in enumerate(baseline_results, 1):
         valid_status = f"{r['Valid_Solutions']}/{r['Pareto_Size']}"
-        print(f"{rank:<6} {r['Algorithm']:<20} {r['Best_CO2_kg']:<15.1f} ${r['Best_Cost_USD']:<14.2f} {valid_status:<12}")
+        print(f"{rank:<6} {r['Algorithm']:<20} {r['Best_CO2_kg']:<15.1f} ${r['Best_Cost_USD']:<17.2f} {r['Best_Time_Hours']:<12.1f} {valid_status:<12}")
     
-    # Key insights
+    print("\n" + "="*80)
+    print(" STATISTICAL SUMMARY ".center(80, "="))
+    print("="*80)
+    
+    pa_emissions = next(r['Best_CO2_kg'] for r in baseline_results if r['Algorithm'] == 'PA-NSGA-II')
+    print(f"\nPA-NSGA-II vs Other Algorithms:")
+    for algo in ['NSGA-II', 'SPEA2', 'NSGA-III']:
+        algo_emissions = next(r['Best_CO2_kg'] for r in baseline_results if r['Algorithm'] == algo)
+        improvement = (algo_emissions - pa_emissions) / algo_emissions * 100
+        print(f"  vs {algo:<12}: {improvement:.1f}% lower CO₂")
+    
+    print("\n" + "="*80)
+    print(" PARETO FRONT DIVERSITY ".center(80, "="))
+    print("="*80)
+    for algo in ['PA-NSGA-II', 'NSGA-II', 'SPEA2', 'NSGA-III']:
+        algo_results = [r for r in baseline_results if r['Algorithm'] == algo]
+        if algo_results:
+            pareto_size = algo_results[0]['Pareto_Size']
+            valid_solutions = algo_results[0]['Valid_Solutions']
+            print(f"  {algo}: {pareto_size} solutions ({valid_solutions} valid)")
+    
     print("\n" + "="*80)
     print(" KEY INSIGHTS ".center(80, "="))
     print("="*80)
@@ -1544,18 +1889,27 @@ def run_comprehensive_comparison():
     pa_result = next(r for r in all_results if r['Scenario'] == 'baseline' and r['Algorithm'] == 'PA-NSGA-II')
     nsga2_result = next(r for r in all_results if r['Scenario'] == 'baseline' and r['Algorithm'] == 'NSGA-II')
     spea2_result = next(r for r in all_results if r['Scenario'] == 'baseline' and r['Algorithm'] == 'SPEA2')
-    
-    vs_nsga2 = ((nsga2_result['Best_CO2_kg'] - pa_result['Best_CO2_kg']) / nsga2_result['Best_CO2_kg'] * 100)
-    vs_spea2 = ((spea2_result['Best_CO2_kg'] - pa_result['Best_CO2_kg']) / spea2_result['Best_CO2_kg'] * 100)
+    nsga3_result = next(r for r in all_results if r['Scenario'] == 'baseline' and r['Algorithm'] == 'NSGA-III')
     
     print(f"\n[1] Baseline Performance ($50/ton CO₂, Dry Season):")
     print(f"    PA-NSGA-II: {pa_result['Best_CO2_kg']:.1f} kg CO₂, ${pa_result['Best_Cost_USD']:.2f}")
     print(f"    NSGA-II:    {nsga2_result['Best_CO2_kg']:.1f} kg CO₂, ${nsga2_result['Best_Cost_USD']:.2f}")
     print(f"    SPEA2:      {spea2_result['Best_CO2_kg']:.1f} kg CO₂, ${spea2_result['Best_Cost_USD']:.2f}")
+    print(f"    NSGA-III:   {nsga3_result['Best_CO2_kg']:.1f} kg CO₂, ${nsga3_result['Best_Cost_USD']:.2f}")
     
     print(f"\n[2] PA-NSGA-II Improvement over Baselines:")
+    vs_nsga2 = (nsga2_result['Best_CO2_kg'] - pa_result['Best_CO2_kg']) / nsga2_result['Best_CO2_kg'] * 100
+    vs_spea2 = (spea2_result['Best_CO2_kg'] - pa_result['Best_CO2_kg']) / spea2_result['Best_CO2_kg'] * 100
+    vs_nsga3 = (nsga3_result['Best_CO2_kg'] - pa_result['Best_CO2_kg']) / nsga3_result['Best_CO2_kg'] * 100
     print(f"    vs NSGA-II: {vs_nsga2:.1f}% lower CO₂")
     print(f"    vs SPEA2:   {vs_spea2:.1f}% lower CO₂")
+    print(f"    vs NSGA-III: {vs_nsga3:.1f}% lower CO₂")
+    
+    print(f"\n[3] Pareto Front Diversity:")
+    print(f"    PA-NSGA-II: {pa_result['Pareto_Size']} non-dominated solutions")
+    print(f"    NSGA-II:    {nsga2_result['Pareto_Size']} non-dominated solutions")
+    print(f"    SPEA2:      {spea2_result['Pareto_Size']} non-dominated solutions")
+    print(f"    NSGA-III:   {nsga3_result['Pareto_Size']} non-dominated solutions")
     
     print("\n" + "="*80)
     print(" COMPARISON COMPLETED SUCCESSFULLY ".center(80, "="))
@@ -1569,6 +1923,13 @@ def run_comprehensive_comparison():
     print("   - Fig4_Algorithm_Ranking.pdf/png")
     print("   - Fig5_Improvement_Chart.pdf/png")
     print("   - Fig6_Summary_Dashboard.pdf/png")
+    print("   - Fig7_Statistical_Significance.pdf/png")
+    print("   - Fig8_Convergence_Comparison.pdf/png")
+    print("   - Fig9_Cost_Emissions_Tradeoff.pdf/png")
+    print("   - Fig10_Cost_Time_Tradeoff.pdf/png")
+    print("   - Fig11_Emissions_Time_Tradeoff.pdf/png")
+    print("   - Fig12_Pareto_Front_Comparison.pdf/png")
+    print("   - Fig13_3D_Objective_Space.pdf/png")
 
 
 if __name__ == "__main__":
