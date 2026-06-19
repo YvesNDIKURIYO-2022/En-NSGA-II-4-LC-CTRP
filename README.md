@@ -19,7 +19,7 @@ This repository contains the complete code, data, and analysis for the paper:
 >
 > *School of Traffic and Transportation Engineering, Central South University, Changsha, China*
 >
-> *Simulation Modelling Practice and Theory (Under Review)*
+> *Computational Optimization and Applications (Under Review)*
 
 ### What is LC-CTRP?
 
@@ -242,7 +242,7 @@ networkx>=2.6.0
 @article{Ndikuriyo2026,
   title = {A Parameter-Adaptive Multi-Objective Evolutionary Algorithm for Low-Carbon Container Routing under Uncertainty},
   author = {Ndikuriyo, Yves and Zhang, Yinggui and Fom, Dung Davou},
-  journal = {Simulation Modelling Practice and Theory},
+  journal = {Computational Optimization and Applications},
   year = {2026},
   note = {Under review}
 }
@@ -284,5 +284,5 @@ PhD Candidate, Central South University, Changsha, China
 ---
 
 <div align="center">
-  <sub>Built with Python • Analysis for Simulation Modelling Practice and Theory • Last updated: June 2026</sub>
+  <sub>Built with Python • Analysis for Computational Optimization and Applications • Last updated: June 2026</sub>
 </div>
